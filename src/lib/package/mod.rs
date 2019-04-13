@@ -1,4 +1,4 @@
-use failure::{format_err, Error};
+use failure::{bail, format_err, Error};
 use semver_constraints;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
@@ -9,10 +9,12 @@ use std::str;
 pub mod retriever;
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct Package {
     name: String,
     version: Version,
     dependencies: HashMap<String, Range>,
+    test_dependencies: HashMap<String, Range>,
     #[serde(flatten)]
     other: HashMap<String, Value>,
 }
@@ -21,12 +23,31 @@ impl Package {
     pub fn dependencies(&self) -> Vec<(String, Range)> {
         self.dependencies
             .iter()
-            .map(|(k, &v)| (k.clone(), v.clone()))
+            .map(|(k, &v)| (k.clone(), v))
             .collect()
+    }
+
+    pub fn all_dependencies(&self) -> Result<Vec<(String, Range)>, Error> {
+        let mut all_deps: HashMap<String, Range> = self.dependencies.clone();
+
+        for (k, v) in self.test_dependencies.iter() {
+            if let Some(e) = all_deps.get(k) {
+                bail!(
+                    "Dependency {}@{} duplicated in test-dependencies as {}",
+                    k,
+                    e,
+                    v
+                )
+            }
+
+            all_deps.insert(k.clone(), *v);
+        }
+
+        Ok(all_deps.iter().map(|(k, &v)| (k.clone(), v)).collect())
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Version {
     major: u64,
     minor: u64,
@@ -62,6 +83,20 @@ impl str::FromStr for Version {
 impl Version {
     fn to_constraint_version(&self) -> semver_constraints::Version {
         semver_constraints::Version::new(self.major, self.minor, self.patch)
+    }
+
+    pub fn to_constraint(&self) -> semver_constraints::Constraint {
+        self.to_constraint_version().into()
+    }
+}
+
+impl From<semver_constraints::Version> for Version {
+    fn from(v: semver_constraints::Version) -> Version {
+        Version {
+            major: v.major,
+            minor: v.minor,
+            patch: v.patch,
+        }
     }
 }
 

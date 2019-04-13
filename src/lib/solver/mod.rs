@@ -23,7 +23,7 @@ pub mod incompat;
 pub mod retriever;
 pub mod summary;
 
-use self::{
+pub use self::{
     assignment::{Assignment, AssignmentType},
     incompat::{IncompatMatch, Incompatibility, IncompatibilityCause},
     retriever::Retriever,
@@ -37,11 +37,11 @@ use petgraph::{
     Direction,
 };
 use semver_constraints::{Constraint, Relation, Version};
-use slog::{error, info, o, trace, warn, Logger};
+use slog::{info, o, trace, warn, Logger};
 use std::{cmp, collections::VecDeque};
 use textwrap::fill;
 
-type Graph<T> = petgraph::Graph<T, ()>;
+pub type Graph<T> = petgraph::Graph<T, ()>;
 
 #[derive(Debug)]
 pub struct Resolver<'ret, R: Retriever> {
@@ -90,7 +90,7 @@ where
         let r = s.solve_loop();
 
         if r.is_err() {
-            error!(s.logger, "solve failed");
+            warn!(s.logger, "solve failed");
             bail!("{}", fill(&s.pp_error(s.incompats.len() - 1), 80))
         } else {
             info!(s.logger, "solve successful");

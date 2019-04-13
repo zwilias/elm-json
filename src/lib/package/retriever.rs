@@ -1,10 +1,16 @@
-use crate::package;
-use crate::solver::{incompat::Incompatibility, retriever, summary};
+use crate::{
+    package,
+    solver::{incompat::Incompatibility, retriever, summary},
+};
 use failure::{bail, format_err, Error};
 use reqwest;
 use semver_constraints::{Constraint, Version};
 use slog::{o, trace, Logger};
 use std::collections::HashMap;
+use std::env;
+use std::fs::File;
+use std::io::BufReader;
+use std::path::PathBuf;
 
 pub struct Retriever {
     deps_cache: HashMap<Summary, Vec<Incompatibility<String>>>,
@@ -40,6 +46,16 @@ impl Retriever {
         }
     }
 
+    pub fn add_dep(&mut self, name: &String, version: &Option<package::Version>) {
+        let constraint =
+            version.map_or_else(|| Constraint::empty(), |x| x.to_constraint().complement());
+        let deps = self.deps_cache.entry(Self::root()).or_insert(Vec::new());
+        deps.push(Incompatibility::from_dep(
+            Self::root(),
+            (name.clone(), constraint),
+        ));
+    }
+
     pub fn fetch_versions(&mut self) -> Result<(), Error> {
         let mut resp = self
             .client
@@ -56,7 +72,7 @@ impl Retriever {
                 )
             })
             .collect();
-        versions.insert("root".to_string(), vec![Version::new(0, 0, 0)]);
+        versions.insert("root".to_string(), vec![Version::new(1, 0, 0)]);
         self.versions = versions;
         Ok(())
     }
@@ -75,7 +91,35 @@ impl Retriever {
         );
         let mut resp = self.client.get(&url).send()?;
         let info: package::Package = resp.json()?;
+        Ok(self.deps_from_package(&pkg, &info))
+    }
 
+    fn read_cached_deps(&mut self, pkg: &Summary) -> Result<Vec<Incompatibility<String>>, Error> {
+        trace!(
+            self.logger,
+            "Attempting to read stored deps for {}@{}",
+            pkg.id,
+            pkg.version
+        );
+
+        let mut p_path = Self::packages_path()?;
+        p_path.push(format!(
+            "0.19.0/package/{}/{}/elm.json",
+            pkg.id, pkg.version
+        ));
+
+        let file = File::open(p_path)?;
+        let reader = BufReader::new(file);
+        let info: package::Package = serde_json::from_reader(reader)?;
+
+        Ok(self.deps_from_package(&pkg, &info))
+    }
+
+    fn deps_from_package(
+        &mut self,
+        pkg: &Summary,
+        info: &package::Package,
+    ) -> Vec<Incompatibility<String>> {
         let deps: Vec<Incompatibility<String>> = info
             .dependencies
             .iter()
@@ -88,11 +132,24 @@ impl Retriever {
         trace!(self.logger, "Caching incompatibilities {:#?}", deps);
 
         self.deps_cache.insert(pkg.clone(), deps.clone());
-        Ok(deps)
+        deps
+    }
+
+    fn packages_path() -> Result<PathBuf, Error> {
+        env::var("ELM_HOME")
+            .map(PathBuf::from)
+            .or_else(|_| {
+                env::var("HOME").map(|h| {
+                    let mut buf = PathBuf::from(&h);
+                    buf.push(".elm");
+                    buf
+                })
+            })
+            .map_err(|e| format_err!("{}", e))
     }
 
     fn root() -> Summary {
-        summary::Summary::new("root".to_string(), Version::new(0, 0, 0))
+        summary::Summary::new("root".to_string(), Version::new(1, 0, 0))
     }
 }
 
@@ -104,11 +161,12 @@ impl retriever::Retriever for Retriever {
     }
 
     fn incompats(&mut self, pkg: &Summary) -> Result<Vec<Incompatibility<Self::PackageId>>, Error> {
-        if let Some(deps) = self.deps_cache.get(&pkg) {
-            Ok(deps.clone())
-        } else {
-            self.fetch_deps(&pkg)
-        }
+        self.deps_cache
+            .get(&pkg)
+            .cloned()
+            .ok_or(())
+            .or_else(|_| self.read_cached_deps(&pkg))
+            .or_else(|_| self.fetch_deps(&pkg))
     }
 
     fn count_versions(&self, pkg: &Self::PackageId) -> usize {
