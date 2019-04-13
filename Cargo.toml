@@ -1,0 +1,27 @@
+[package]
+name = "elm-json"
+version = "0.1.0"
+authors = ["ilias <mail@ilias.xyz>"]
+edition = "2018"
+
+[dependencies]
+semver_constraints = "0.1"
+indexmap = "1"
+itertools = "0.7"
+failure = "0.1"
+petgraph = "0.4"
+slog = { version = "2", features = ["max_level_trace", "release_max_level_debug"] }
+textwrap = "0.10"
+slog-term = "2.4.0"
+slog-async = "2.3.0"
+reqwest = "0.9.14"
+serde  = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[lib]
+name = "elm_json"
+path = "src/lib/lib.rs"
+
+[[bin]]
+name = "elm_json"
+path = "src/bin/main.rs"
