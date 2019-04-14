@@ -20,7 +20,7 @@ SOFTWARE.
 */
 //! Assignments for the dependency resolver.
 
-use semver_constraints::{Constraint, Version};
+use crate::semver::{Constraint, Version};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Assignment<PackageId> {

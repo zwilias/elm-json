@@ -1,39 +1,70 @@
 use crate::{
     package,
+    semver::{Constraint, Range, Version},
     solver::{incompat::Incompatibility, retriever, summary},
 };
+use bincode;
 use failure::{bail, format_err, Error};
 use reqwest;
-use semver_constraints::{Constraint, Version};
-use slog::{o, trace, Logger};
-use std::collections::HashMap;
-use std::env;
-use std::fs::File;
-use std::io::BufReader;
-use std::path::PathBuf;
+use slog::{o, trace, warn, Logger};
+use std::{
+    collections::HashMap,
+    env, fmt,
+    fs::File,
+    io::{BufReader, BufWriter},
+    path::PathBuf,
+};
 
 pub struct Retriever {
-    deps_cache: HashMap<Summary, Vec<Incompatibility<String>>>,
-    versions: HashMap<String, Vec<Version>>,
+    deps_cache: HashMap<Summary, Vec<Incompatibility<PackageId>>>,
+    versions: HashMap<PackageId, Vec<Version>>,
+    preferred_versions: HashMap<PackageId, Version>,
     logger: Logger,
     client: reqwest::Client,
 }
 
-type Summary = summary::Summary<String>;
+type Summary = summary::Summary<PackageId>;
+
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+pub enum PackageId {
+    Root,
+    Elm,
+    Pkg(String),
+}
+
+impl summary::PackageId for PackageId {
+    fn is_root(&self) -> bool {
+        self == &PackageId::Root
+    }
+}
+
+impl fmt::Display for PackageId {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            PackageId::Root => write!(f, "root"),
+            PackageId::Elm => write!(f, "Elm"),
+            PackageId::Pkg(name) => write!(f, "{}", name),
+        }
+    }
+}
+
+impl From<String> for PackageId {
+    fn from(s: String) -> Self {
+        PackageId::Pkg(s)
+    }
+}
 
 impl Retriever {
-    pub fn new(logger: &Logger, deps: &[(String, package::Range)]) -> Self {
+    pub fn new(logger: &Logger, elm_version: Constraint) -> Self {
         let mut deps_cache = HashMap::new();
 
-        let deps: Vec<Incompatibility<String>> = deps
-            .iter()
-            .map(|(name, range)| {
-                let constraint = range.to_constraint().complement();
-                Incompatibility::from_dep(Self::root(), (name.clone(), constraint))
-            })
-            .collect();
-
-        deps_cache.insert(Self::root(), deps);
+        deps_cache.insert(
+            Self::root(),
+            vec![Incompatibility::from_dep(
+                Self::root(),
+                (PackageId::Elm, elm_version.complement()),
+            )],
+        );
 
         let logger = logger.new(o!("phase" => "retrieve"));
         let client = reqwest::Client::new();
@@ -41,43 +72,135 @@ impl Retriever {
         Retriever {
             deps_cache,
             versions: HashMap::new(),
+            preferred_versions: HashMap::new(),
             logger,
             client,
         }
     }
 
-    pub fn add_dep(&mut self, name: &String, version: &Option<package::Version>) {
+    pub fn add_deps(&mut self, deps: &[(String, Range)]) {
+        let deps: Vec<Incompatibility<_>> = deps
+            .iter()
+            .map(|(name, range)| {
+                let constraint = Constraint::from(range.clone()).complement();
+                Incompatibility::from_dep(Self::root(), (name.clone().into(), constraint))
+            })
+            .collect();
+        let entry = self.deps_cache.entry(Self::root()).or_insert_with(Vec::new);
+        entry.extend(deps);
+    }
+
+    pub fn add_dep(&mut self, name: &str, version: &Option<Version>) {
         let constraint =
-            version.map_or_else(|| Constraint::empty(), |x| x.to_constraint().complement());
-        let deps = self.deps_cache.entry(Self::root()).or_insert(Vec::new());
+            version.map_or_else(Constraint::empty, |x| Constraint::from(x).complement());
+        let deps = self.deps_cache.entry(Self::root()).or_insert_with(Vec::new);
         deps.push(Incompatibility::from_dep(
             Self::root(),
-            (name.clone(), constraint),
+            (name.to_string().into(), constraint),
         ));
     }
 
-    pub fn fetch_versions(&mut self) -> Result<(), Error> {
-        let mut resp = self
-            .client
-            .get("https://package.elm-lang.org/all-packages")
-            .send()?;
+    fn count_versions(versions_map: &HashMap<String, Vec<Version>>) -> usize {
+        let mut count = 0;
+        for (_, vs) in versions_map.iter() {
+            count += vs.len();
+        }
+        count
+    }
 
-        let versions: HashMap<String, Vec<package::Version>> = resp.json()?;
-        let mut versions: HashMap<String, Vec<Version>> = versions
+    pub fn fetch_versions(&mut self) -> Result<(), Error> {
+        let mut versions: HashMap<_, _> = self.fetch_cached_versions().unwrap_or_default();
+        let count = Self::count_versions(&versions);
+
+        let remote_versions = self.fetch_remote_versions(count).unwrap_or_else(|_| {
+            warn!(
+                self.logger,
+                "Failed too fetch versions from package.elm-lang.org"
+            );
+            HashMap::new()
+        });
+        for (pkg, vs) in remote_versions.iter() {
+            let entry = versions.entry(pkg.to_string()).or_insert_with(Vec::new);
+            entry.extend(vs);
+        }
+
+        self.save_cached_versions(&versions)?;
+
+        let mut versions: HashMap<PackageId, Vec<Version>> = versions
             .iter()
-            .map(|(k, v)| {
-                (
-                    k.clone(),
-                    v.iter().map(|v| v.to_constraint_version()).collect(),
-                )
-            })
+            .map(|(k, v)| (k.clone().into(), v.clone()))
             .collect();
-        versions.insert("root".to_string(), vec![Version::new(1, 0, 0)]);
+
+        versions.insert(PackageId::Root, vec![Version::new(1, 0, 0)]);
+        versions.insert(
+            PackageId::Elm,
+            vec![
+                Version::new(0, 14, 0),
+                Version::new(0, 15, 0),
+                Version::new(0, 16, 0),
+                Version::new(0, 17, 0),
+                Version::new(0, 18, 0),
+                Version::new(0, 19, 0),
+            ],
+        );
+
         self.versions = versions;
         Ok(())
     }
 
-    fn fetch_deps(&mut self, pkg: &Summary) -> Result<Vec<Incompatibility<String>>, Error> {
+    fn fetch_cached_versions(&self) -> Result<HashMap<String, Vec<Version>>, Error> {
+        let mut p_path = Self::packages_path()?;
+        p_path.push("elm-json/versions.dat");
+        trace!(
+            self.logger,
+            "Attempting to read cached versions from {:?}",
+            p_path
+        );
+        let file = File::open(p_path)?;
+        let reader = BufReader::new(file);
+        let versions: HashMap<String, Vec<Version>> = bincode::deserialize_from(reader)?;
+        Ok(versions)
+    }
+
+    fn save_cached_versions(&self, versions: &HashMap<String, Vec<Version>>) -> Result<(), Error> {
+        let mut p_path = Self::packages_path()?;
+        p_path.push("elm-json/versions.dat");
+
+        trace!(self.logger, "Writing cached versions to {:?}", p_path);
+        let file = File::create(p_path)?;
+        let writer = BufWriter::new(file);
+        bincode::serialize_into(writer, &versions)?;
+        Ok(())
+    }
+
+    fn fetch_remote_versions(&self, from: usize) -> Result<HashMap<String, Vec<Version>>, Error> {
+        trace!(self.logger, "Fetching versions since {}", from);
+        let url = format!("https://package.elm-lang.org/all-packages/since/{}", from);
+        let mut resp = self.client.get(&url).send()?;
+
+        let versions: Vec<String> = resp.json()?;
+        let mut res: HashMap<String, Vec<Version>> = HashMap::new();
+
+        for entry in versions.iter() {
+            let parts: Vec<_> = entry.split('@').collect();
+            match parts.as_slice() {
+                [p, v] => {
+                    let version: Version = v.parse()?;
+                    let entry = res.entry(p.to_string()).or_insert_with(Vec::new);
+                    entry.push(version)
+                }
+                _ => bail!("Invalid entry: {}", entry),
+            }
+        }
+
+        Ok(res)
+    }
+
+    pub fn set_preferred_versions(&mut self, versions: HashMap<PackageId, Version>) {
+        self.preferred_versions = versions;
+    }
+
+    fn fetch_deps(&mut self, pkg: &Summary) -> Result<Vec<Incompatibility<PackageId>>, Error> {
         trace!(
             self.logger,
             "Fetching dependencies for {}@{}",
@@ -94,7 +217,10 @@ impl Retriever {
         Ok(self.deps_from_package(&pkg, &info))
     }
 
-    fn read_cached_deps(&mut self, pkg: &Summary) -> Result<Vec<Incompatibility<String>>, Error> {
+    fn read_cached_deps(
+        &mut self,
+        pkg: &Summary,
+    ) -> Result<Vec<Incompatibility<PackageId>>, Error> {
         trace!(
             self.logger,
             "Attempting to read stored deps for {}@{}",
@@ -119,15 +245,23 @@ impl Retriever {
         &mut self,
         pkg: &Summary,
         info: &package::Package,
-    ) -> Vec<Incompatibility<String>> {
-        let deps: Vec<Incompatibility<String>> = info
+    ) -> Vec<Incompatibility<PackageId>> {
+        let mut deps: Vec<Incompatibility<_>> = info
             .dependencies
             .iter()
             .map(|(name, range)| {
                 let constraint = range.to_constraint().complement();
-                Incompatibility::from_dep(pkg.clone(), (name.clone(), constraint))
+                Incompatibility::from_dep(pkg.clone(), (name.clone().into(), constraint))
             })
             .collect();
+
+        deps.push(Incompatibility::from_dep(
+            pkg.clone(),
+            (
+                PackageId::Elm,
+                info.elm_version().to_constraint().complement(),
+            ),
+        ));
 
         trace!(self.logger, "Caching incompatibilities {:#?}", deps);
 
@@ -149,18 +283,21 @@ impl Retriever {
     }
 
     fn root() -> Summary {
-        summary::Summary::new("root".to_string(), Version::new(1, 0, 0))
+        summary::Summary::new(PackageId::Root, Version::new(1, 0, 0))
     }
 }
 
 impl retriever::Retriever for Retriever {
-    type PackageId = String;
+    type PackageId = self::PackageId;
 
     fn root(&self) -> Summary {
         Self::root()
     }
 
     fn incompats(&mut self, pkg: &Summary) -> Result<Vec<Incompatibility<Self::PackageId>>, Error> {
+        if pkg.id == PackageId::Elm {
+            return Ok(Vec::new());
+        }
         self.deps_cache
             .get(&pkg)
             .cloned()
@@ -184,7 +321,18 @@ impl retriever::Retriever for Retriever {
             pkg,
             con
         );
-        if let Some(versions) = self.versions.get(pkg) {
+        if let Some(version) = self.preferred_versions.get(pkg) {
+            if con.satisfies(version) {
+                Ok(*version)
+            } else {
+                bail!(
+                    "I want to use version {} for {} but it's not allowed by constraint {}",
+                    version,
+                    pkg,
+                    con
+                )
+            }
+        } else if let Some(versions) = self.versions.get(pkg) {
             versions
                 .iter()
                 .filter(|v| con.satisfies(v))

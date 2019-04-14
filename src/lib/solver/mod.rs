@@ -29,6 +29,7 @@ pub use self::{
     retriever::Retriever,
     summary::Summary,
 };
+use crate::semver::{Constraint, Relation, Version};
 use failure::{bail, Error};
 use indexmap::{indexmap, indexset, IndexMap};
 use petgraph::{
@@ -36,10 +37,8 @@ use petgraph::{
     graphmap::{DiGraphMap, NodeTrait},
     Direction,
 };
-use semver_constraints::{Constraint, Relation, Version};
-use slog::{info, o, trace, warn, Logger};
+use slog::{info, o, trace, Logger};
 use std::{cmp, collections::VecDeque};
-use textwrap::fill;
 
 pub type Graph<T> = petgraph::Graph<T, ()>;
 
@@ -90,8 +89,8 @@ where
         let r = s.solve_loop();
 
         if r.is_err() {
-            warn!(s.logger, "solve failed");
-            bail!("{}", fill(&s.pp_error(s.incompats.len() - 1), 80))
+            info!(s.logger, "solve failed");
+            bail!("{}", &s.pp_error(s.incompats.len() - 1))
         } else {
             info!(s.logger, "solve successful");
             Ok(r.unwrap())
@@ -99,7 +98,7 @@ where
     }
 
     fn solve_loop(&mut self) -> Result<Graph<Summary<R::PackageId>>, Error> {
-        let c: Constraint = self.retriever.root().version().clone().into();
+        let c: Constraint = self.retriever.root().version().into();
         let pkgs = indexmap!(self.retriever.root().id().clone() => c.complement());
         self.incompatibility(pkgs, IncompatibilityCause::Root);
 
@@ -126,7 +125,7 @@ where
             for inc in deps {
                 let pkg = inc.deps.get_index(1).unwrap().0;
                 let ver = &self.decisions[pkg];
-                let sum = Summary::new(pkg.clone(), ver.clone());
+                let sum = Summary::new(pkg.clone(), *ver);
 
                 let nix = if set.contains_key(&sum) {
                     set[&sum]
@@ -407,7 +406,7 @@ where
             let res = Some(package.0.clone());
             match best {
                 Ok(best) => {
-                    let sum = Summary::new(package.0.clone(), best.clone());
+                    let sum = Summary::new(package.0.clone(), best);
                     // We know the package exists, so unwrapping here is fine
                     let incompats = self.retriever.incompats(&sum).unwrap();
                     let mut conflict = false;
@@ -431,7 +430,7 @@ where
                 Err(e) => {
                     // This case encapsulates everything from "no versions were found" to "the package
                     // literally doesn't exist in the index"
-                    warn!(
+                    info!(
                         self.logger,
                         "Failed to add package {} {}: {}", package.0, package.1, e
                     );
@@ -468,7 +467,6 @@ where
     // 4: Error reporting
     // cause things go bad
     fn pp_error(&self, root_icix: usize) -> String {
-        let mut s = String::new();
         let mut linum: IndexMap<usize, u16> = indexmap!();
         let mut cur_linum = 1;
         let mut ics = DiGraphMap::<usize, ()>::new();
@@ -480,9 +478,7 @@ where
             }
         }
 
-        s.push_str("version solving has failed");
-        s.push_str("\n");
-        s.push_str("\n");
+        let mut s = String::new();
         self.pp_err_recur(root_icix, &ics, &mut linum, &mut cur_linum, &mut s);
 
         s
@@ -519,7 +515,7 @@ where
                     }
                     (Some(l), None) => {
                         self.pp_err_recur(right_ix, ics, linum, cur_linum, out);
-                        out.push_str("And because ");
+                        out.push_str("\nAnd because ");
                         out.push_str(&left.show());
                         out.push_str(" (");
                         out.push_str(&l.to_string());
@@ -527,7 +523,7 @@ where
                     }
                     (None, Some(r)) => {
                         self.pp_err_recur(right_ix, ics, linum, cur_linum, out);
-                        out.push_str("And because ");
+                        out.push_str("\nAnd because ");
                         out.push_str(&right.show());
                         out.push_str(" (");
                         out.push_str(&r.to_string());
@@ -577,7 +573,7 @@ where
                                 *cur_linum += 1;
                                 out.push_str("\n");
 
-                                out.push_str("And because ");
+                                out.push_str("\nAnd because ");
                                 out.push_str(&left.show());
                             }
                         }
@@ -628,11 +624,11 @@ where
                         };
 
                         self.pp_err_recur(prior_derived_ix, ics, linum, cur_linum, out);
-                        out.push_str("And because ");
+                        out.push_str("\nAnd because ");
                         out.push_str(&prior_external.show_combine(external, None, None));
                     } else {
                         self.pp_err_recur(derived_ix, ics, linum, cur_linum, out);
-                        out.push_str("And because ");
+                        out.push_str("\nAnd because ");
                         out.push_str(&external.show());
                     }
                 }

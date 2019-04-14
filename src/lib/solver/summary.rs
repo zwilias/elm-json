@@ -1,25 +1,33 @@
-extern crate semver_constraints;
-use semver_constraints::Version;
+use crate::semver::Version;
+use std::fmt;
 
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
-pub struct Summary<PackageId: Clone + PartialEq + std::hash::Hash + Eq> {
-    pub id: PackageId,
+pub struct Summary<P: PackageId> {
+    pub id: P,
     pub version: Version,
 }
 
-impl<PackageId> Summary<PackageId>
+pub trait PackageId: Clone + PartialEq + std::hash::Hash + Eq + fmt::Display {
+    fn is_root(&self) -> bool;
+}
+
+impl<P> Summary<P>
 where
-    PackageId: Clone + PartialEq + Eq + std::hash::Hash,
+    P: PackageId,
 {
-    pub fn new(id: PackageId, version: Version) -> Self {
+    pub fn new(id: P, version: Version) -> Self {
         Self { id, version }
     }
 
     pub fn version(&self) -> Version {
-        self.version.clone()
+        self.version
     }
 
-    pub fn id(&self) -> PackageId {
+    pub fn id(&self) -> P {
         self.id.clone()
+    }
+
+    pub fn is_root(&self) -> bool {
+        self.id.is_root()
     }
 }

@@ -1,5 +1,5 @@
+use crate::semver::{self, Version};
 use failure::{bail, format_err, Error};
-use semver_constraints;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -15,19 +15,24 @@ pub struct Package {
     version: Version,
     dependencies: HashMap<String, Range>,
     test_dependencies: HashMap<String, Range>,
+    elm_version: Range,
     #[serde(flatten)]
     other: HashMap<String, Value>,
 }
 
 impl Package {
-    pub fn dependencies(&self) -> Vec<(String, Range)> {
+    pub fn elm_version(&self) -> Range {
+        self.elm_version
+    }
+
+    pub fn dependencies(&self) -> Vec<(String, semver::Range)> {
         self.dependencies
             .iter()
-            .map(|(k, &v)| (k.clone(), v))
+            .map(|(k, &v)| (k.clone(), v.to_constraint_range()))
             .collect()
     }
 
-    pub fn all_dependencies(&self) -> Result<Vec<(String, Range)>, Error> {
+    pub fn all_dependencies(&self) -> Result<Vec<(String, semver::Range)>, Error> {
         let mut all_deps: HashMap<String, Range> = self.dependencies.clone();
 
         for (k, v) in self.test_dependencies.iter() {
@@ -43,15 +48,11 @@ impl Package {
             all_deps.insert(k.clone(), *v);
         }
 
-        Ok(all_deps.iter().map(|(k, &v)| (k.clone(), v)).collect())
+        Ok(all_deps
+            .iter()
+            .map(|(k, v)| (k.clone(), v.to_constraint_range()))
+            .collect())
     }
-}
-
-#[derive(Copy, Clone, Debug)]
-pub struct Version {
-    major: u64,
-    minor: u64,
-    patch: u64,
 }
 
 #[derive(Copy, Clone)]
@@ -60,76 +61,17 @@ pub struct Range {
     upper: Version,
 }
 
-impl str::FromStr for Version {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<u64> = s
-            .split('.')
-            .map(|x| x.parse::<u64>())
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| format_err!("{}", e))?;
-        match parts.as_slice() {
-            [major, minor, patch] => Ok(Version {
-                major: *major,
-                minor: *minor,
-                patch: *patch,
-            }),
-            _ => Err(format_err!("Invalid version: {}", s)),
-        }
-    }
-}
-
-impl Version {
-    fn to_constraint_version(&self) -> semver_constraints::Version {
-        semver_constraints::Version::new(self.major, self.minor, self.patch)
-    }
-
-    pub fn to_constraint(&self) -> semver_constraints::Constraint {
-        self.to_constraint_version().into()
-    }
-}
-
-impl From<semver_constraints::Version> for Version {
-    fn from(v: semver_constraints::Version) -> Version {
-        Version {
-            major: v.major,
-            minor: v.minor,
-            patch: v.patch,
-        }
-    }
-}
-
-impl fmt::Display for Version {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
-    }
-}
-
-impl Serialize for Version {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(&self.to_string())
-    }
-}
-
-impl<'de> Deserialize<'de> for Version {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let s = String::deserialize(deserializer)?;
-        s.parse().map_err(de::Error::custom)
-    }
-}
-
 impl Range {
-    pub fn to_constraint(&self) -> semver_constraints::Constraint {
-        let range = semver_constraints::Range::new(
-            semver_constraints::Interval::Closed(self.lower.to_constraint_version(), false),
-            semver_constraints::Interval::Open(self.upper.to_constraint_version(), false),
+    pub fn to_constraint(&self) -> semver::Constraint {
+        self.to_constraint_range().into()
+    }
+
+    pub fn to_constraint_range(&self) -> semver::Range {
+        semver::Range::new(
+            semver::Interval::Closed(self.lower),
+            semver::Interval::Open(self.upper),
         )
-        .unwrap();
-        semver_constraints::Constraint::from(range)
+        .unwrap()
     }
 }
 
@@ -145,6 +87,15 @@ impl str::FromStr for Range {
                 Ok(Range { lower, upper })
             }
             _ => Err(format_err!("Invalid range: {}", s)),
+        }
+    }
+}
+
+impl From<Version> for Range {
+    fn from(v: Version) -> Self {
+        Self {
+            lower: v,
+            upper: Version::new(v.major() + 1, 0, 0),
         }
     }
 }

@@ -20,10 +20,10 @@ SOFTWARE.
 */
 //! Incompatibilities for the dependency resolver.
 
-use super::summary::Summary;
+use super::summary::{self, Summary};
+use crate::semver::Constraint;
 use indexmap::{indexmap, IndexMap};
 use itertools::Itertools;
-use semver_constraints::Constraint;
 use std::fmt;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -35,11 +35,11 @@ pub enum IncompatibilityCause {
 }
 
 #[derive(Clone, PartialEq, Eq)]
-pub struct Incompatibility<PackageId>
+pub struct Incompatibility<P>
 where
-    PackageId: std::hash::Hash + PartialEq + Clone + Eq + fmt::Display,
+    P: std::hash::Hash + PartialEq + Clone + Eq + fmt::Display,
 {
-    pub deps: IndexMap<PackageId, Constraint>,
+    pub deps: IndexMap<P, Constraint>,
     pub cause: IncompatibilityCause,
 }
 
@@ -50,15 +50,15 @@ pub enum IncompatMatch<PackageId> {
     Contradicted,
 }
 
-impl<PackageId> Incompatibility<PackageId>
+impl<P> Incompatibility<P>
 where
-    PackageId: std::hash::Hash + PartialEq + Eq + Clone + fmt::Display,
+    P: summary::PackageId,
 {
-    pub fn new(deps: IndexMap<PackageId, Constraint>, cause: IncompatibilityCause) -> Self {
+    pub fn new(deps: IndexMap<P, Constraint>, cause: IncompatibilityCause) -> Self {
         Incompatibility { deps, cause }
     }
 
-    pub fn from_dep(a: Summary<PackageId>, b: (PackageId, Constraint)) -> Self {
+    pub fn from_dep(a: Summary<P>, b: (P, Constraint)) -> Self {
         let m = indexmap!(
             a.id => a.version.into(),
             b.0 => b.1,
@@ -67,7 +67,7 @@ where
         Incompatibility::new(m, IncompatibilityCause::Dependency)
     }
 
-    pub fn deps(&self) -> &IndexMap<PackageId, Constraint> {
+    pub fn deps(&self) -> &IndexMap<P, Constraint> {
         &self.deps
     }
 
@@ -94,33 +94,34 @@ where
                 let depender = self.deps.get_index(0).unwrap();
                 let dependee = self.deps.get_index(1).unwrap();
                 format!(
-                    "{} {} depends on {} {}",
-                    depender.0,
-                    depender.1,
-                    dependee.0,
-                    dependee.1.complement()
+                    "{} depends on {}",
+                    Self::show_pkg(depender.0, depender.1),
+                    Self::show_pkg(dependee.0, &dependee.1.complement())
                 )
             }
             IncompatibilityCause::Unavailable => {
                 assert!(self.deps.len() == 1);
                 let package = self.deps.get_index(0).unwrap();
-                format!("{} {} is unavailable", package.0, package.1)
+                format!("{} is unavailable", Self::show_pkg(package.0, package.1))
             }
             IncompatibilityCause::Root => "the root package was chosen".to_string(),
             IncompatibilityCause::Derived(_, _) => {
                 if self.deps.len() == 1 {
-                    let package = self.deps.get_index(0).unwrap();
-                    format!("{} {} is impossible", package.0, package.1)
+                    "version solving failed".to_string()
                 } else if self.deps.len() == 2 {
                     let p1 = self.deps.get_index(0).unwrap();
                     let p2 = self.deps.get_index(1).unwrap();
-                    format!("{} {} is incompatible with {} {}", p1.0, p1.1, p2.0, p2.1)
+                    format!(
+                        "{} is incompatible with {}",
+                        Self::show_pkg(p1.0, p1.1),
+                        Self::show_pkg(p2.0, p2.1)
+                    )
                 } else {
                     format!(
                         "one of {} must be false",
                         self.deps
                             .iter()
-                            .map(|(k, v)| format!("{} {}", k, v))
+                            .map(|(k, v)| Self::show_pkg(k, v))
                             .join("; ")
                     )
                 }
@@ -128,10 +129,18 @@ where
         }
     }
 
+    fn show_pkg(pkg: &P, constraint: &Constraint) -> String {
+        if pkg.is_root() {
+            "root".to_string()
+        } else {
+            format!("{} {}", pkg, constraint)
+        }
+    }
+
     // TODO: Actually special-case stuff to look nicer.
     pub fn show_combine(
         &self,
-        other: &Incompatibility<PackageId>,
+        other: &Incompatibility<P>,
         self_linum: Option<u16>,
         other_linum: Option<u16>,
     ) -> String {
@@ -158,7 +167,7 @@ where
 
     fn show_combine_same(
         &self,
-        other: &Incompatibility<PackageId>,
+        other: &Incompatibility<P>,
         self_linum: Option<u16>,
     ) -> Option<String> {
         if self == other {
@@ -175,9 +184,9 @@ where
     }
 }
 
-impl<PackageId> fmt::Debug for Incompatibility<PackageId>
+impl<P> fmt::Debug for Incompatibility<P>
 where
-    PackageId: std::hash::Hash + PartialEq + Clone + Eq + fmt::Display,
+    P: summary::PackageId,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
