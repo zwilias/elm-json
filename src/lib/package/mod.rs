@@ -8,19 +8,49 @@ use std::str;
 
 pub mod retriever;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Package {
     name: String,
+    summary: String,
+    license: String,
     version: Version,
+    exposed_modules: Exposed,
+    elm_version: Range,
     dependencies: BTreeMap<String, Range>,
     test_dependencies: BTreeMap<String, Range>,
-    elm_version: Range,
     #[serde(flatten)]
     other: BTreeMap<String, Value>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum Exposed {
+    Plain(Vec<String>),
+    Structured(BTreeMap<String, Vec<String>>),
+}
+
 impl Package {
+    pub fn new(name: String, summary: String, license: String) -> Self {
+        let mut dependencies = BTreeMap::new();
+        dependencies.insert(
+            "elm/core".to_string(),
+            Range::new(Version::new(1, 0, 0), Version::new(2, 0, 0)),
+        );
+
+        Self {
+            name,
+            summary,
+            license,
+            exposed_modules: Exposed::Plain(Vec::new()),
+            version: Version::new(1, 0, 0),
+            dependencies,
+            test_dependencies: BTreeMap::new(),
+            elm_version: Range::new(Version::new(0, 19, 0), Version::new(0, 20, 0)),
+            other: BTreeMap::new(),
+        }
+    }
+
     pub fn elm_version(&self) -> Range {
         self.elm_version
     }
@@ -55,13 +85,17 @@ impl Package {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub struct Range {
     lower: Version,
     upper: Version,
 }
 
 impl Range {
+    pub fn new(lower: Version, upper: Version) -> Self {
+        Self { lower, upper }
+    }
+
     pub fn to_constraint(&self) -> semver::Constraint {
         self.to_constraint_range().into()
     }

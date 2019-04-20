@@ -10,14 +10,14 @@ use std::collections::{BTreeMap, HashSet};
 
 pub use crate::package::Package;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum Project {
     Application(Application),
     Package(Package),
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Application {
     source_directories: Vec<String>,
@@ -35,7 +35,7 @@ pub struct AppDependencies {
 }
 
 pub fn reconstruct(
-    direct_names: &Vec<String>,
+    direct_names: &[String],
     g: solver::Graph<solver::Summary<retriever::PackageId>>,
 ) -> (AppDependencies, AppDependencies) {
     let mut direct = BTreeMap::new();
@@ -110,7 +110,16 @@ pub fn reconstruct(
 }
 
 impl AppDependencies {
-    pub fn new(g: solver::Graph<solver::Summary<retriever::PackageId>>) -> Self {
+    pub fn new() -> Self {
+        Self {
+            direct: BTreeMap::new(),
+            indirect: BTreeMap::new(),
+        }
+    }
+}
+
+impl From<solver::Graph<solver::Summary<retriever::PackageId>>> for AppDependencies {
+    fn from(g: solver::Graph<solver::Summary<retriever::PackageId>>) -> Self {
         let mut direct: BTreeMap<String, Version> = BTreeMap::new();
         let mut indirect: BTreeMap<String, Version> = BTreeMap::new();
         let root = g.node_references().nth(0).unwrap().0;
@@ -137,7 +146,30 @@ impl AppDependencies {
     }
 }
 
+impl Default for AppDependencies {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Application {
+    pub fn new() -> Self {
+        let mut direct = BTreeMap::new();
+        direct.insert("elm/core".to_string(), Version::new(1, 0, 2));
+        let deps = AppDependencies {
+            direct,
+            indirect: BTreeMap::new(),
+        };
+
+        Self {
+            source_directories: vec!["src".to_string()],
+            elm_version: Version::new(0, 19, 0),
+            dependencies: deps,
+            test_dependencies: AppDependencies::new(),
+            other: BTreeMap::new(),
+        }
+    }
+
     pub fn dependencies(&self, strictness: &Strictness) -> Vec<(String, Range)> {
         self.dependencies
             .direct
@@ -156,6 +188,10 @@ impl Application {
 
     pub fn indirect_dependencies(&self) -> BTreeMap<String, Version> {
         self.dependencies.indirect.clone()
+    }
+
+    pub fn indirect_test_dependencies(&self) -> BTreeMap<String, Version> {
+        self.test_dependencies.indirect.clone()
     }
 
     pub fn elm_version(&self) -> Version {
@@ -180,5 +216,11 @@ impl Application {
             test_dependencies: deps,
             other: self.other.clone(),
         }
+    }
+}
+
+impl Default for Application {
+    fn default() -> Self {
+        Self::new()
     }
 }
