@@ -21,9 +21,15 @@ pub struct Retriever {
     preferred_versions: HashMap<PackageId, Version>,
     logger: Logger,
     client: reqwest::Client,
+    mode: Mode,
 }
 
 type Summary = summary::Summary<PackageId>;
+
+pub enum Mode {
+    Minimize,
+    Maximize,
+}
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum PackageId {
@@ -75,7 +81,12 @@ impl Retriever {
             preferred_versions: HashMap::new(),
             logger,
             client,
+            mode: Mode::Maximize,
         }
+    }
+
+    pub fn minimize(&mut self) {
+        self.mode = Mode::Minimize;
     }
 
     pub fn add_deps(&mut self, deps: &[(String, Range)]) {
@@ -336,7 +347,10 @@ impl retriever::Retriever for Retriever {
             versions
                 .iter()
                 .filter(|v| con.satisfies(v))
-                .max_by(|x, y| x.cmp(y))
+                .max_by(|x, y| match self.mode {
+                    Mode::Minimize => y.cmp(x),
+                    Mode::Maximize => x.cmp(y),
+                })
                 .cloned()
                 .ok_or_else(|| format_err!("Failed to find a version for {}", pkg))
         } else {

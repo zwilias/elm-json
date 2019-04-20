@@ -8,7 +8,7 @@ extern crate slog_async;
 extern crate slog_term;
 extern crate textwrap;
 
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use colored::Colorize;
 use dialoguer::Confirmation;
 use elm_json::{
@@ -17,7 +17,7 @@ use elm_json::{
     semver,
     solver::Resolver,
 };
-use failure::{bail, format_err, Error};
+use failure::{format_err, Error};
 use serde::ser::Serialize;
 use slog::{o, Drain, Logger};
 use std::{
@@ -30,6 +30,7 @@ fn main() -> Result<(), Error> {
     let matches = App::new("elm-json")
         .version(env!("CARGO_PKG_VERSION"))
         .about("Deal with your elm.json")
+        .setting(AppSettings::SubcommandRequiredElseHelp)
         .arg(
             Arg::with_name("verbose")
                 .short("v")
@@ -101,6 +102,12 @@ fn main() -> Result<(), Error> {
                         .long("test"),
                 )
                 .arg(
+                    Arg::with_name("minimize")
+                        .help("Choose lowest available versions rather than highest")
+                        .short("m")
+                        .long("minimize"),
+                )
+                .arg(
                     Arg::with_name("extra")
                         .short("e")
                         .long("extra")
@@ -139,8 +146,7 @@ fn main() -> Result<(), Error> {
     } else if let Some(matches) = matches.subcommand_matches("uninstall") {
         uninstall(matches, &logger)
     } else {
-        println!("I need a command!\n\nTry running with the --help flag for more information.");
-        Ok(())
+        unreachable!();
     }
 }
 
@@ -164,7 +170,9 @@ fn upgrade(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
 
     match info {
         Project::Application(app) => upgrade_application(&matches, &logger, &app),
-        Project::Package(_pkg) => bail!("TODO: Implement upgrade for package"),
+        Project::Package(_pkg) => {
+            unsupported("Upgrading dependencies for packages is not yet supported.")
+        }
     }
 }
 
@@ -176,7 +184,9 @@ fn install(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
 
     match info {
         Project::Application(app) => install_application(&matches, &logger, &app),
-        Project::Package(_pkg) => bail!("TODO: Implement install for package"),
+        Project::Package(_pkg) => {
+            unsupported("Installing dependencies for packages is not yet supported.")
+        }
     }
 }
 
@@ -188,8 +198,16 @@ fn uninstall(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
 
     match info {
         Project::Application(app) => uninstall_application(&matches, &logger, &app),
-        Project::Package(_pkg) => bail!("TODO: Implement uninstall for package"),
+        Project::Package(_pkg) => {
+            unsupported("Uninstalling dependencies for packages is not yet supported")
+        }
     }
+}
+
+fn unsupported(description: &str) -> Result<(), Error> {
+    println!("\n{}\n", format_header("COMMAND NOT YET IMPLEMENTED").red());
+    println!("{}", textwrap::fill(description, 80));
+    std::process::exit(1)
 }
 
 fn uninstall_application(
@@ -214,7 +232,7 @@ fn uninstall_application(
         info.dependencies
             .indirect
             .iter()
-            .filter(|(k, _)| !extras.contains(k.clone()))
+            .filter(|(k, _)| !extras.contains(&String::clone(k)))
             .map(|(k, v)| (k.clone().into(), *v))
             .collect(),
     );
@@ -223,7 +241,7 @@ fn uninstall_application(
         info.test_dependencies
             .indirect
             .iter()
-            .filter(|(k, _)| !extras.contains(k.clone()))
+            .filter(|(k, _)| !extras.contains(&String::clone(k)))
             .map(|(k, v)| (k.clone().into(), *v))
             .collect(),
     );
@@ -257,7 +275,7 @@ fn uninstall_application(
         .dependencies
         .direct
         .keys()
-        .filter(|x| !extras.contains(x.clone()))
+        .filter(|x| !extras.contains(&String::clone(x)))
         .cloned()
         .collect::<Vec<_>>();
 
@@ -313,7 +331,7 @@ fn install_application(
         info.dependencies
             .indirect
             .iter()
-            .filter(|(k, _)| !extras.contains(k.clone()))
+            .filter(|(k, _)| !extras.contains(&String::clone(k)))
             .map(|(k, v)| (k.clone().into(), *v))
             .collect(),
     );
@@ -322,7 +340,7 @@ fn install_application(
         info.test_dependencies
             .indirect
             .iter()
-            .filter(|(k, _)| !extras.contains(k.clone()))
+            .filter(|(k, _)| !extras.contains(&String::clone(k)))
             .map(|(k, v)| (k.clone().into(), *v))
             .collect(),
     );
@@ -355,15 +373,15 @@ fn install_application(
     let extra_direct: Vec<_> = if matches.is_present("test") {
         Vec::new()
     } else {
-        extras.iter().map(|x| x.clone()).collect()
+        extras.iter().cloned().collect()
     };
 
     let mut orig_direct = info
         .dependencies
         .direct
         .keys()
-        .filter(|x| !extras.contains(x.clone()))
-        .map(|x| x.clone())
+        .filter(|x| !extras.contains(&String::clone(x)))
+        .cloned()
         .collect::<Vec<_>>();
     orig_direct.extend(extra_direct);
 
@@ -427,10 +445,7 @@ fn upgrade_application(
             unreachable!()
         });
 
-    let deps = project::reconstruct(
-        &info.dependencies.direct.keys().map(|x| x.clone()).collect(),
-        res,
-    );
+    let deps = project::reconstruct(&info.dependencies.direct.keys().cloned().collect(), res);
 
     if deps.0 == info.dependencies {
         println!("\n{}\n", format_header("PACKAGES UP TO DATE").green());
@@ -483,7 +498,7 @@ pub fn show_diff(
             title.bold()
         );
         it.print();
-        println!("");
+        println!();
     }
 }
 
@@ -612,7 +627,7 @@ fn solve_application(
     retriever.add_preferred_versions(
         indirect
             .iter()
-            .filter(|(k, _)| !extras.contains(k.clone()))
+            .filter(|(k, _)| !extras.contains(&String::clone(k)))
             .map(|(k, v)| (k.clone().into(), *v))
             .collect(),
     );
@@ -656,6 +671,11 @@ fn solve_package(matches: &ArgMatches, logger: &Logger, info: &Package) -> Resul
 
     let mut retriever: Retriever = Retriever::new(&logger, info.elm_version().to_constraint());
     retriever.fetch_versions()?;
+
+    if matches.is_present("minimize") {
+        retriever.minimize();
+    }
+
     let extras = add_extra_deps(&matches, &mut retriever)?;
 
     let deps: Vec<_> = deps
