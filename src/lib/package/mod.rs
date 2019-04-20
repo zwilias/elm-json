@@ -2,7 +2,7 @@ use crate::semver::{self, Version};
 use failure::{bail, format_err, Error};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::fmt;
 use std::str;
 
@@ -13,11 +13,11 @@ pub mod retriever;
 pub struct Package {
     name: String,
     version: Version,
-    dependencies: HashMap<String, Range>,
-    test_dependencies: HashMap<String, Range>,
+    dependencies: BTreeMap<String, Range>,
+    test_dependencies: BTreeMap<String, Range>,
     elm_version: Range,
     #[serde(flatten)]
-    other: HashMap<String, Value>,
+    other: BTreeMap<String, Value>,
 }
 
 impl Package {
@@ -33,7 +33,7 @@ impl Package {
     }
 
     pub fn all_dependencies(&self) -> Result<Vec<(String, semver::Range)>, Error> {
-        let mut all_deps: HashMap<String, Range> = self.dependencies.clone();
+        let mut all_deps: BTreeMap<String, Range> = self.dependencies.clone();
 
         for (k, v) in self.test_dependencies.iter() {
             if let Some(e) = all_deps.get(k) {

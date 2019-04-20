@@ -115,7 +115,7 @@ impl Retriever {
         let remote_versions = self.fetch_remote_versions(count).unwrap_or_else(|_| {
             warn!(
                 self.logger,
-                "Failed too fetch versions from package.elm-lang.org"
+                "Failed to fetch versions from package.elm-lang.org"
             );
             HashMap::new()
         });
@@ -196,8 +196,8 @@ impl Retriever {
         Ok(res)
     }
 
-    pub fn set_preferred_versions(&mut self, versions: HashMap<PackageId, Version>) {
-        self.preferred_versions = versions;
+    pub fn add_preferred_versions(&mut self, versions: HashMap<PackageId, Version>) {
+        self.preferred_versions.extend(versions);
     }
 
     fn fetch_deps(&mut self, pkg: &Summary) -> Result<Vec<Incompatibility<PackageId>>, Error> {
