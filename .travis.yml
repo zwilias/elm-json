@@ -37,7 +37,7 @@ matrix:
   - name: Linux Binary
     env: TARGET=x86_64-unknown-linux-musl
     before_script: rustup target add $TARGET
-    script: cargo build --release --target $TARGET --locked --features vendored-openssl
+    script: cargo build --release --target $TARGET --locked
     addons:
       apt:
         packages:
