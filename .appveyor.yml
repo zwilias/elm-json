@@ -20,9 +20,7 @@ test_script:
 before_deploy:
   - ps: |
         $NAME = "elm-json-${env:APPVEYOR_REPO_TAG_NAME}-x86_64-pc-windows-msvc"
-        New-Item -Path $NAME -ItemType directory
-        Copy-Item target/release/elm-json.exe "${NAME}/"
-        7z a -ttar "${NAME}.tar" "${NAME}"
+        7z a -ttar "${NAME}.tar" target/release/elm-json.exe
         7z a "${NAME}.tar.gz" "${NAME}.tar"
         Push-AppveyorArtifact "${NAME}.tar.gz"
 

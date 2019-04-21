@@ -10,10 +10,7 @@ GH_TOKEN: &GH_TOKEN
 
 DEPLOY_TO_GITHUB: &DEPLOY_TO_GITHUB
   before_deploy:
-    - name="elm-json-$TRAVIS_TAG-$TARGET"
-    - mkdir $name
-    - cp target/$TARGET/release/elm-json $name/
-    - tar czvf $name.tar.gz $name
+    - tar czvf elm-json-$TRAVIS_TAG-$TARGET.tar.gz target/$TARGET/release/elm-json
   deploy:
     provider: releases
     api_key: *GH_TOKEN
