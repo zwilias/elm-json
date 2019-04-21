@@ -44,7 +44,6 @@ pub type Graph<T> = petgraph::Graph<T, ()>;
 
 #[derive(Debug)]
 pub struct Resolver<'ret, R: Retriever> {
-    /// The current step.
     step: u16,
     level: u16,
     assignments: Vec<Assignment<R::PackageId>>,
@@ -53,7 +52,7 @@ pub struct Resolver<'ret, R: Retriever> {
     incompats: Vec<Incompatibility<R::PackageId>>,
     incompat_ixs: IndexMap<R::PackageId, Vec<usize>>,
     retriever: &'ret mut R,
-    pub logger: Logger,
+    logger: Logger,
 }
 
 impl<'ret, R> Resolver<'ret, R>

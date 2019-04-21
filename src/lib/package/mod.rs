@@ -17,13 +17,13 @@ pub struct Package {
     version: Version,
     exposed_modules: Exposed,
     elm_version: Range,
-    dependencies: BTreeMap<String, Range>,
-    test_dependencies: BTreeMap<String, Range>,
+    pub dependencies: BTreeMap<String, Range>,
+    pub test_dependencies: BTreeMap<String, Range>,
     #[serde(flatten)]
     other: BTreeMap<String, Value>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum Exposed {
     Plain(Vec<String>),
@@ -53,6 +53,24 @@ impl Package {
 
     pub fn elm_version(&self) -> Range {
         self.elm_version
+    }
+
+    pub fn with_deps(
+        &self,
+        dependencies: BTreeMap<String, Range>,
+        test_dependencies: BTreeMap<String, Range>,
+    ) -> Self {
+        Self {
+            name: self.name.clone(),
+            summary: self.summary.clone(),
+            license: self.license.clone(),
+            exposed_modules: self.exposed_modules.clone(),
+            version: self.version.clone(),
+            dependencies,
+            test_dependencies,
+            elm_version: self.elm_version.clone(),
+            other: self.other.clone(),
+        }
     }
 
     pub fn dependencies(&self) -> Vec<(String, semver::Range)> {
@@ -85,7 +103,7 @@ impl Package {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Range {
     lower: Version,
     upper: Version,
