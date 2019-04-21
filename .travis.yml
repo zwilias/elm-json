@@ -10,7 +10,8 @@ GH_TOKEN: &GH_TOKEN
 
 DEPLOY_TO_GITHUB: &DEPLOY_TO_GITHUB
   before_deploy:
-    - tar czvf elm-json-$TRAVIS_TAG-$TARGET.tar.gz target/$TARGET/release/elm-json
+    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then strip target/$TARGET/release/elm-json; fi
+    - tar czvf -C elm-json-$TRAVIS_TAG-$TARGET.tar.gz target/$TARGET/release elm-json
   deploy:
     provider: releases
     api_key: *GH_TOKEN

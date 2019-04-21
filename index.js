@@ -11,7 +11,7 @@ var root =
 
 module.exports = binwrap({
     dirname: __dirname,
-    binaries: ["myapp-cli"],
+    binaries: ["elm-json"],
     urls: {
         "darwin-x64": root + "-x86_64-apple-darwin.tar.gz",
         "linux-x64": root + "-x86_64-unknown-linux-musl.tar.gz",
