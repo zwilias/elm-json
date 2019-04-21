@@ -1,0 +1,40 @@
+environment:
+  global:
+    RUSTFLAGS: -C target-feature=+crt-static
+
+install:
+  - ps: Install-Product node 10
+  - appveyor-retry appveyor DownloadFile https://win.rustup.rs/ -FileName rustup-init.exe
+  - rustup-init.exe -y --default-host x86_64-pc-windows-msvc --default-toolchain stable
+  - set PATH=%PATH%;C:\Users\appveyor\.cargo\bin
+  - set RUST_BACKTRACE=1
+  - rustup target add wasm32-unknown-unknown --toolchain stable
+  - rustc -V
+  - cargo -V
+
+build: false
+
+test_script:
+  - cargo test --release --tests --locked
+
+before_deploy:
+  - ps: |
+        $NAME = "elm-json-${env:APPVEYOR_REPO_TAG_NAME}-x86_64-pc-windows-msvc"
+        New-Item -Path $NAME -ItemType directory
+        Copy-Item target/release/elm-json.exe "${NAME}/"
+        Copy-Item target/release/elm-json.exe elm-json-init.exe
+        7z a -ttar "${NAME}.tar" "${NAME}"
+        7z a "${NAME}.tar.gz" "${NAME}.tar"
+        Push-AppveyorArtifact "${NAME}.tar.gz"
+        Push-AppveyorArtifact elm-json-init.exe
+
+deploy:
+  artifact: /.*\.tar.gz/, /.*\.exe/
+  description: 'Appveyor Automated Release'
+  provider: GitHub
+  draft: false
+  prerelease: false
+  auth_token:
+    secure: 9P6Vc2ezYzVR+a/Vx3aPjBUwuubXsVgt6rYeSP84wUwuwCTnCaJ5xMxz2DOuNOjO
+  on:
+    appveyor_repo_tag: true
