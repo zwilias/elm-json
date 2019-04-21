@@ -284,11 +284,23 @@ impl Retriever {
         env::var("ELM_HOME")
             .map(PathBuf::from)
             .or_else(|_| {
-                env::var("HOME").map(|h| {
-                    let mut buf = PathBuf::from(&h);
-                    buf.push(".elm");
-                    buf
-                })
+                if cfg!(windows) {
+                    dirs::config_dir()
+                        .map(|d| {
+                            let mut buf = PathBuf::from(&d);
+                            buf.push("elm");
+                            buf
+                        })
+                        .ok_or_else(|| format_err!("No config directory found?"))
+                } else {
+                    dirs::home_dir()
+                        .map(|h| {
+                            let mut buf = PathBuf::from(&h);
+                            buf.push(".elm");
+                            buf
+                        })
+                        .ok_or_else(|| format_err!("No home directory found?"))
+                }
             })
             .map_err(|e| format_err!("{}", e))
     }
