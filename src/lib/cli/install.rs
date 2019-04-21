@@ -64,12 +64,10 @@ fn install_package(matches: &ArgMatches, logger: &Logger, info: &Package) -> Res
                 } else {
                     deps.insert(dep.clone(), r);
                 }
+            } else if direct_dep_names.contains(&dep) {
+                deps.insert(dep.clone(), info.dependencies[&dep]);
             } else {
-                if direct_dep_names.contains(&dep) {
-                    deps.insert(dep.clone(), *info.dependencies.get(&dep).unwrap());
-                } else {
-                    test_deps.insert(dep.clone(), *info.test_dependencies.get(&dep).unwrap());
-                }
+                test_deps.insert(dep.clone(), info.test_dependencies[&dep]);
             }
         }
     }

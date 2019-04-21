@@ -1,12 +1,4 @@
-extern crate clap;
-extern crate colored;
-extern crate dialoguer;
-extern crate elm_json;
-extern crate serde_json;
-extern crate slog;
-extern crate slog_async;
-extern crate slog_term;
-extern crate textwrap;
+#![warn(unused_extern_crates)]
 
 use elm_json::cli;
 use failure::Error;

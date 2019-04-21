@@ -65,10 +65,10 @@ impl Package {
             summary: self.summary.clone(),
             license: self.license.clone(),
             exposed_modules: self.exposed_modules.clone(),
-            version: self.version.clone(),
+            version: self.version,
             dependencies,
             test_dependencies,
-            elm_version: self.elm_version.clone(),
+            elm_version: self.elm_version,
             other: self.other.clone(),
         }
     }

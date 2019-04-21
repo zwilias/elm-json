@@ -71,7 +71,7 @@ pub fn unsupported(description: &str) -> Result<(), Error> {
 
 pub fn show_diff<T>(title: &str, left: &BTreeMap<String, T>, right: &BTreeMap<String, T>)
 where
-    T: Eq + std::fmt::Display + Sized + Clone,
+    T: Eq + std::fmt::Display + Sized + Copy,
 {
     let it = Diff::new(&left, &right);
     if !it.is_empty() {
@@ -86,7 +86,7 @@ where
 
 impl<T> Diff<T>
 where
-    T: Sized + Eq + Clone + std::fmt::Display,
+    T: Sized + Eq + Copy + std::fmt::Display,
 {
     pub fn new(left: &BTreeMap<String, T>, right: &BTreeMap<String, T>) -> Diff<T> {
         let mut only_left = Vec::new();
@@ -104,11 +104,7 @@ where
         {
             if left_name == right_name {
                 if left_version != right_version {
-                    changed.push((
-                        left_name.clone(),
-                        left_version.clone(),
-                        right_version.clone(),
-                    ))
+                    changed.push((left_name.clone(), *left_version, *right_version))
                 }
 
                 left = iter_left.next();
@@ -117,25 +113,25 @@ where
             }
 
             if left_name < right_name {
-                only_left.push((left_name.clone(), left_version.clone()));
+                only_left.push((left_name.clone(), *left_version));
                 left = iter_left.next();
                 continue;
             }
 
             if left_name > right_name {
-                only_right.push((right_name.clone(), right_version.clone()));
+                only_right.push((right_name.clone(), *right_version));
                 right = iter_right.next();
                 continue;
             }
         }
 
         while let Some((name, version)) = left {
-            only_left.push((name.clone(), version.clone()));
+            only_left.push((name.clone(), *version));
             left = iter_left.next();
         }
 
         while let Some((name, version)) = right {
-            only_right.push((name.clone(), version.clone()));
+            only_right.push((name.clone(), *version));
             right = iter_right.next();
         }
 
@@ -167,7 +163,7 @@ where
 
 pub struct Diff<T>
 where
-    T: Eq + Sized + Clone + std::fmt::Display,
+    T: Eq + Sized + Copy + std::fmt::Display,
 {
     only_left: Vec<(String, T)>,
     only_right: Vec<(String, T)>,
