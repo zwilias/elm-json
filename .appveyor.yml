@@ -15,17 +15,16 @@ build: false
 
 test_script:
   - cargo test --release --tests --locked
+  - cargo build --release
 
 before_deploy:
   - ps: |
         $NAME = "elm-json-${env:APPVEYOR_REPO_TAG_NAME}-x86_64-pc-windows-msvc"
         New-Item -Path $NAME -ItemType directory
         Copy-Item target/release/elm-json.exe "${NAME}/"
-        Copy-Item target/release/elm-json.exe elm-json-init.exe
         7z a -ttar "${NAME}.tar" "${NAME}"
         7z a "${NAME}.tar.gz" "${NAME}.tar"
         Push-AppveyorArtifact "${NAME}.tar.gz"
-        Push-AppveyorArtifact elm-json-init.exe
 
 deploy:
   artifact: /.*\.tar.gz/, /.*\.exe/
