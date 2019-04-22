@@ -130,12 +130,3 @@ Documentation TBD. Intended for other tooling to use, not meant for human consum
 > More info: `elm-json help completions`
 
 Create completion scripts for `elm-json` for `bash`/`fish`/`zsh`.
-
-## TODO
-
-- [ ] Support `uninstall` for packages
-- [ ] Support `upgrade` for packages
-- [ ] Make errors more readable
-- [ ] Add more/better documentation
-- [ ] Learn Rust
-- [x] Set up npm package for ease of installation
