@@ -35,7 +35,7 @@ pub enum Mode {
 pub enum PackageId {
     Root,
     Elm,
-    Pkg(String),
+    Pkg(package::Name),
 }
 
 impl summary::PackageId for PackageId {
@@ -54,9 +54,9 @@ impl fmt::Display for PackageId {
     }
 }
 
-impl From<String> for PackageId {
-    fn from(s: String) -> Self {
-        PackageId::Pkg(s)
+impl From<package::Name> for PackageId {
+    fn from(n: package::Name) -> Self {
+        PackageId::Pkg(n)
     }
 }
 
@@ -92,7 +92,7 @@ impl Retriever {
         self.mode = Mode::Minimize;
     }
 
-    pub fn add_deps(&mut self, deps: &[(String, Range)]) {
+    pub fn add_deps(&mut self, deps: &[(package::Name, Range)]) {
         let deps: Vec<Incompatibility<_>> = deps
             .iter()
             .map(|(name, range)| {
@@ -104,17 +104,17 @@ impl Retriever {
         entry.extend(deps);
     }
 
-    pub fn add_dep(&mut self, name: &str, version: &Option<Version>) {
+    pub fn add_dep(&mut self, name: package::Name, version: &Option<Version>) {
         let constraint =
             version.map_or_else(Constraint::empty, |x| Constraint::from(x).complement());
         let deps = self.deps_cache.entry(Self::root()).or_insert_with(Vec::new);
         deps.push(Incompatibility::from_dep(
             Self::root(),
-            (name.to_string().into(), constraint),
+            (name.into(), constraint),
         ));
     }
 
-    fn count_versions(versions_map: &HashMap<String, Vec<Version>>) -> usize {
+    fn count_versions(versions_map: &HashMap<package::Name, Vec<Version>>) -> usize {
         let mut count = 0;
         for (_, vs) in versions_map.iter() {
             count += vs.len();
@@ -134,7 +134,7 @@ impl Retriever {
             HashMap::new()
         });
         for (pkg, vs) in remote_versions.iter() {
-            let entry = versions.entry(pkg.to_string()).or_insert_with(Vec::new);
+            let entry = versions.entry(pkg.clone()).or_insert_with(Vec::new);
             entry.extend(vs);
         }
 
@@ -162,7 +162,7 @@ impl Retriever {
         Ok(())
     }
 
-    fn fetch_cached_versions(&self) -> Result<HashMap<String, Vec<Version>>, Error> {
+    fn fetch_cached_versions(&self) -> Result<HashMap<package::Name, Vec<Version>>, Error> {
         let mut p_path = Self::packages_path()?;
         p_path.push("elm-json");
         p_path.push("versions.dat");
@@ -172,11 +172,14 @@ impl Retriever {
         );
         let file = File::open(p_path)?;
         let reader = BufReader::new(file);
-        let versions: HashMap<String, Vec<Version>> = bincode::deserialize_from(reader)?;
+        let versions: HashMap<package::Name, Vec<Version>> = bincode::deserialize_from(reader)?;
         Ok(versions)
     }
 
-    fn save_cached_versions(&self, versions: &HashMap<String, Vec<Version>>) -> Result<(), Error> {
+    fn save_cached_versions(
+        &self,
+        versions: &HashMap<package::Name, Vec<Version>>,
+    ) -> Result<(), Error> {
         let mut p_path = Self::packages_path()?;
         p_path.push("elm-json");
         fs::create_dir_all(p_path.clone())?;
@@ -189,20 +192,24 @@ impl Retriever {
         Ok(())
     }
 
-    fn fetch_remote_versions(&self, from: usize) -> Result<HashMap<String, Vec<Version>>, Error> {
+    fn fetch_remote_versions(
+        &self,
+        from: usize,
+    ) -> Result<HashMap<package::Name, Vec<Version>>, Error> {
         debug!(self.logger, "Fetching versions since {}", from);
         let url = format!("https://package.elm-lang.org/all-packages/since/{}", from);
         let mut resp = self.client.get(&url).send()?;
 
         let versions: Vec<String> = resp.json()?;
-        let mut res: HashMap<String, Vec<Version>> = HashMap::new();
+        let mut res: HashMap<package::Name, Vec<Version>> = HashMap::new();
 
         for entry in versions.iter() {
             let parts: Vec<_> = entry.split('@').collect();
             match parts.as_slice() {
                 [p, v] => {
+                    let name: package::Name = p.parse()?;
                     let version: Version = v.parse()?;
-                    let entry = res.entry(p.to_string()).or_insert_with(Vec::new);
+                    let entry = res.entry(name).or_insert_with(Vec::new);
                     entry.push(version)
                 }
                 _ => bail!("Invalid entry: {}", entry),

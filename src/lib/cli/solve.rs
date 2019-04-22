@@ -37,7 +37,7 @@ fn solve_application(
     retriever.add_preferred_versions(
         indirect
             .iter()
-            .filter(|(k, _)| !extras.contains(&String::clone(k)))
+            .filter(|&(k, _)| !extras.contains(&k.clone()))
             .map(|(k, v)| (k.clone().into(), *v))
             .collect(),
     );
@@ -61,7 +61,7 @@ fn solve_application(
         retriever.add_preferred_versions(
             info.indirect_test_dependencies()
                 .iter()
-                .filter(|(k, _)| !extras.contains(&String::clone(k)))
+                .filter(|&(k, _)| !extras.contains(&k.clone()))
                 .map(|(k, v)| (k.clone().into(), *v))
                 .collect(),
         )

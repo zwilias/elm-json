@@ -13,19 +13,19 @@ pub mod retriever;
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct Package {
-    name: String,
+    name: Name,
     summary: String,
     license: String,
     version: Version,
     exposed_modules: Exposed,
     elm_version: Range,
-    pub dependencies: BTreeMap<String, Range>,
-    pub test_dependencies: BTreeMap<String, Range>,
+    pub dependencies: BTreeMap<Name, Range>,
+    pub test_dependencies: BTreeMap<Name, Range>,
     #[serde(flatten)]
     other: BTreeMap<String, Value>,
 }
 
-#[derive(Debug)]
+#[derive(PartialEq, Eq, Hash, PartialOrd, Ord, Debug, Clone)]
 pub struct Name {
     author: String,
     project: String,
@@ -154,12 +154,12 @@ impl Package {
     pub fn new(name: Name, summary: String, license: String) -> Self {
         let mut dependencies = BTreeMap::new();
         dependencies.insert(
-            "elm/core".to_string(),
+            Name::new("elm", "core").unwrap(),
             Range::new(Version::new(1, 0, 0), Version::new(2, 0, 0)),
         );
 
         Self {
-            name: format!("{}", name),
+            name,
             summary,
             license,
             exposed_modules: Exposed::Plain(Vec::new()),
@@ -177,8 +177,8 @@ impl Package {
 
     pub fn with_deps(
         &self,
-        dependencies: BTreeMap<String, Range>,
-        test_dependencies: BTreeMap<String, Range>,
+        dependencies: BTreeMap<Name, Range>,
+        test_dependencies: BTreeMap<Name, Range>,
     ) -> Self {
         Self {
             name: self.name.clone(),
@@ -193,15 +193,15 @@ impl Package {
         }
     }
 
-    pub fn dependencies(&self) -> Vec<(String, semver::Range)> {
+    pub fn dependencies(&self) -> Vec<(Name, semver::Range)> {
         self.dependencies
             .iter()
             .map(|(k, &v)| (k.clone(), v.to_constraint_range()))
             .collect()
     }
 
-    pub fn all_dependencies(&self) -> Result<Vec<(String, semver::Range)>, Error> {
-        let mut all_deps: BTreeMap<String, Range> = self.dependencies.clone();
+    pub fn all_dependencies(&self) -> Result<Vec<(Name, semver::Range)>, Error> {
+        let mut all_deps: BTreeMap<Name, Range> = self.dependencies.clone();
 
         for (k, v) in self.test_dependencies.iter() {
             if let Some(e) = all_deps.get(k) {

@@ -1,6 +1,6 @@
 use super::util;
 use crate::{
-    package::retriever::Retriever,
+    package::{self, retriever::Retriever},
     project::{self, Application, Project},
     semver,
     solver::Resolver,
@@ -41,18 +41,19 @@ fn uninstall_application(
 
     let mut retriever: Retriever = Retriever::new(&logger, elm_version.into())?;
 
-    let extras: HashSet<String> = matches
+    let extras: Result<HashSet<_>, Error> = matches
         .values_of_lossy("extra")
         .unwrap_or_else(Vec::new)
         .iter()
-        .cloned()
+        .map(|p| p.parse::<package::Name>())
         .collect();
+    let extras = extras?;
 
     retriever.add_preferred_versions(
         info.dependencies
             .indirect
             .iter()
-            .filter(|(k, _)| !extras.contains(&String::clone(k)))
+            .filter(|&(k, _)| !extras.contains(&k.clone()))
             .map(|(k, v)| (k.clone().into(), *v))
             .collect(),
     );
@@ -61,7 +62,7 @@ fn uninstall_application(
         info.test_dependencies
             .indirect
             .iter()
-            .filter(|(k, _)| !extras.contains(&String::clone(k)))
+            .filter(|&(k, _)| !extras.contains(&k.clone()))
             .map(|(k, v)| (k.clone().into(), *v))
             .collect(),
     );
@@ -95,7 +96,7 @@ fn uninstall_application(
         .dependencies
         .direct
         .keys()
-        .filter(|x| !extras.contains(&String::clone(x)))
+        .filter(|&x| !extras.contains(&x.clone()))
         .cloned()
         .collect::<Vec<_>>();
 

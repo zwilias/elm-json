@@ -1,7 +1,9 @@
 use crate::{
-    package::retriever::{PackageId, Retriever},
-    semver,
-    semver::Version,
+    package::{
+        self,
+        retriever::{PackageId, Retriever},
+    },
+    semver::{self, Version},
     solver,
 };
 use clap::ArgMatches;
@@ -9,12 +11,15 @@ use colored::Colorize;
 use failure::Error;
 use std::collections::{BTreeMap, HashSet};
 
-pub fn find_by_name(name: &str, g: &solver::Graph<solver::Summary<PackageId>>) -> Option<Version> {
+pub fn find_by_name(
+    name: &package::Name,
+    g: &solver::Graph<solver::Summary<PackageId>>,
+) -> Option<Version> {
     for idx in g.node_indices() {
         let item = g[idx].clone();
         match item.id {
             PackageId::Pkg(n) => {
-                if n == name {
+                if &n == name {
                     return Some(g[idx].version);
                 }
                 continue;
@@ -28,7 +33,7 @@ pub fn find_by_name(name: &str, g: &solver::Graph<solver::Summary<PackageId>>) -
 pub fn add_extra_deps(
     matches: &ArgMatches,
     retriever: &mut Retriever,
-) -> Result<HashSet<String>, Error> {
+) -> Result<HashSet<package::Name>, Error> {
     let mut extras = HashSet::new();
 
     for dep in matches
@@ -39,13 +44,15 @@ pub fn add_extra_deps(
         let parts: Vec<&str> = dep.split('@').collect();
         match parts.as_slice() {
             [name] => {
-                retriever.add_dep(&name.to_string(), &None);
-                extras.insert(name.to_string());
+                let name: package::Name = name.parse()?;
+                retriever.add_dep(name.clone(), &None);
+                extras.insert(name);
             }
             [name, version] => {
                 let version: semver::Version = version.parse()?;
-                retriever.add_dep(&name.to_string(), &Some(version));
-                extras.insert(name.to_string());
+                let name: package::Name = name.parse()?;
+                retriever.add_dep(name.clone(), &Some(version));
+                extras.insert(name);
             }
             _ => unreachable!(),
         }
@@ -69,9 +76,10 @@ pub fn unsupported(description: &str) -> Result<(), Error> {
     std::process::exit(1)
 }
 
-pub fn show_diff<T>(title: &str, left: &BTreeMap<String, T>, right: &BTreeMap<String, T>)
+pub fn show_diff<K, T>(title: &str, left: &BTreeMap<K, T>, right: &BTreeMap<K, T>)
 where
     T: Eq + std::fmt::Display + Sized + Copy,
+    K: std::fmt::Display + Ord + Clone,
 {
     let it = Diff::new(&left, &right);
     if !it.is_empty() {
@@ -84,11 +92,12 @@ where
     }
 }
 
-impl<T> Diff<T>
+impl<K, T> Diff<K, T>
 where
     T: Sized + Eq + Copy + std::fmt::Display,
+    K: std::fmt::Display + Ord + Clone,
 {
-    pub fn new(left: &BTreeMap<String, T>, right: &BTreeMap<String, T>) -> Diff<T> {
+    pub fn new(left: &BTreeMap<K, T>, right: &BTreeMap<K, T>) -> Diff<K, T> {
         let mut only_left = Vec::new();
         let mut only_right = Vec::new();
         let mut changed = Vec::new();
@@ -161,11 +170,12 @@ where
     }
 }
 
-pub struct Diff<T>
+pub struct Diff<K, T>
 where
+    K: Ord + std::fmt::Display + Clone,
     T: Eq + Sized + Copy + std::fmt::Display,
 {
-    only_left: Vec<(String, T)>,
-    only_right: Vec<(String, T)>,
-    changed: Vec<(String, T, T)>,
+    only_left: Vec<(K, T)>,
+    only_right: Vec<(K, T)>,
+    changed: Vec<(K, T, T)>,
 }

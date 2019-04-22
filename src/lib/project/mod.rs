@@ -1,5 +1,5 @@
 use crate::{
-    package::retriever,
+    package::{self, retriever},
     semver::{Range, Strictness, Version},
     solver,
 };
@@ -30,12 +30,12 @@ pub struct Application {
 
 #[derive(PartialEq, Eq, Clone, Debug, Serialize, Deserialize)]
 pub struct AppDependencies {
-    pub direct: BTreeMap<String, Version>,
-    pub indirect: BTreeMap<String, Version>,
+    pub direct: BTreeMap<package::Name, Version>,
+    pub indirect: BTreeMap<package::Name, Version>,
 }
 
 pub fn reconstruct(
-    direct_names: &[String],
+    direct_names: &[package::Name],
     g: solver::Graph<solver::Summary<retriever::PackageId>>,
 ) -> (AppDependencies, AppDependencies) {
     let mut direct = BTreeMap::new();
@@ -120,8 +120,8 @@ impl AppDependencies {
 
 impl From<solver::Graph<solver::Summary<retriever::PackageId>>> for AppDependencies {
     fn from(g: solver::Graph<solver::Summary<retriever::PackageId>>) -> Self {
-        let mut direct: BTreeMap<String, Version> = BTreeMap::new();
-        let mut indirect: BTreeMap<String, Version> = BTreeMap::new();
+        let mut direct: BTreeMap<package::Name, Version> = BTreeMap::new();
+        let mut indirect: BTreeMap<package::Name, Version> = BTreeMap::new();
         let root = g.node_references().nth(0).unwrap().0;
         let mut bfs = petgraph::visit::Bfs::new(&g, root);
 
@@ -131,14 +131,12 @@ impl From<solver::Graph<solver::Summary<retriever::PackageId>>> for AppDependenc
             }
             let item = g[nx].clone();
 
-            if item.id == retriever::PackageId::Elm {
-                continue;
-            }
-
-            if g.find_edge(root, nx).is_some() {
-                direct.insert(item.id.to_string(), item.version);
-            } else {
-                indirect.insert(item.id.to_string(), item.version);
+            if let retriever::PackageId::Pkg(name) = item.id {
+                if g.find_edge(root, nx).is_some() {
+                    direct.insert(name, item.version);
+                } else {
+                    indirect.insert(name, item.version);
+                }
             }
         }
 
@@ -155,7 +153,10 @@ impl Default for AppDependencies {
 impl Application {
     pub fn new() -> Self {
         let mut direct = BTreeMap::new();
-        direct.insert("elm/core".to_string(), Version::new(1, 0, 2));
+        direct.insert(
+            package::Name::new("elm", "core").unwrap(),
+            Version::new(1, 0, 2),
+        );
         let deps = AppDependencies {
             direct,
             indirect: BTreeMap::new(),
@@ -170,7 +171,7 @@ impl Application {
         }
     }
 
-    pub fn dependencies(&self, strictness: &Strictness) -> Vec<(String, Range)> {
+    pub fn dependencies(&self, strictness: &Strictness) -> Vec<(package::Name, Range)> {
         self.dependencies
             .direct
             .iter()
@@ -178,7 +179,7 @@ impl Application {
             .collect()
     }
 
-    pub fn test_dependencies(&self, strictness: &Strictness) -> Vec<(String, Range)> {
+    pub fn test_dependencies(&self, strictness: &Strictness) -> Vec<(package::Name, Range)> {
         self.test_dependencies
             .direct
             .iter()
@@ -186,11 +187,11 @@ impl Application {
             .collect()
     }
 
-    pub fn indirect_dependencies(&self) -> BTreeMap<String, Version> {
+    pub fn indirect_dependencies(&self) -> BTreeMap<package::Name, Version> {
         self.dependencies.indirect.clone()
     }
 
-    pub fn indirect_test_dependencies(&self) -> BTreeMap<String, Version> {
+    pub fn indirect_test_dependencies(&self) -> BTreeMap<package::Name, Version> {
         self.test_dependencies.indirect.clone()
     }
 

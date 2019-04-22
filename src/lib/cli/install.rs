@@ -47,8 +47,8 @@ fn install_package(matches: &ArgMatches, logger: &Logger, info: &Package) -> Res
             unreachable!()
         });
 
-    let mut deps: BTreeMap<String, package::Range> = BTreeMap::new();
-    let mut test_deps: BTreeMap<String, package::Range> = BTreeMap::new();
+    let mut deps: BTreeMap<_, package::Range> = BTreeMap::new();
+    let mut test_deps: BTreeMap<_, package::Range> = BTreeMap::new();
     let direct_dep_names: Vec<_> = info.dependencies.keys().cloned().collect();
     let root = res.node_references().nth(0).unwrap().0;
     let for_test = matches.is_present("test");
@@ -122,7 +122,7 @@ fn install_application(
         info.dependencies
             .indirect
             .iter()
-            .filter(|(k, _)| !extras.contains(&String::clone(k)))
+            .filter(|&(k, _)| !extras.contains(&k.clone()))
             .map(|(k, v)| (k.clone().into(), *v))
             .collect(),
     );
@@ -131,7 +131,7 @@ fn install_application(
         info.test_dependencies
             .indirect
             .iter()
-            .filter(|(k, _)| !extras.contains(&String::clone(k)))
+            .filter(|&(k, _)| !extras.contains(&k.clone()))
             .map(|(k, v)| (k.clone().into(), *v))
             .collect(),
     );
@@ -171,7 +171,7 @@ fn install_application(
         .dependencies
         .direct
         .keys()
-        .filter(|x| !extras.contains(&String::clone(x)))
+        .filter(|&x| !extras.contains(&x.clone()))
         .cloned()
         .collect::<Vec<_>>();
     orig_direct.extend(extra_direct);
