@@ -10,7 +10,7 @@ use slog::{debug, o, warn, Logger};
 use std::{
     collections::HashMap,
     env, fmt,
-    fs::File,
+    fs::{self, File},
     io::{BufReader, BufWriter},
     path::PathBuf,
 };
@@ -176,6 +176,7 @@ impl Retriever {
     fn save_cached_versions(&self, versions: &HashMap<String, Vec<Version>>) -> Result<(), Error> {
         let mut p_path = Self::packages_path()?;
         p_path.push("elm-json");
+        fs::create_dir_all(p_path.clone())?;
         p_path.push("versions.dat");
 
         debug!(self.logger, "Writing cached versions to {:?}", p_path);
