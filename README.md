@@ -1,4 +1,5 @@
-# elm-json [![Build Status](https://travis-ci.org/zwilias/elm-json.svg?branch=master)](https://travis-ci.org/zwilias/elm-json) [![Build status](https://ci.appveyor.com/api/projects/status/0vub0mf2oenp5lbd/branch/master?svg=true)](https://ci.appveyor.com/project/zwilias/elm-json/branch/master) [![npm version](https://badge.fury.io/js/elm-json.svg)](https://badge.fury.io/js/elm-json)
+[![Build Status](https://travis-ci.org/zwilias/elm-json.svg?branch=master)](https://travis-ci.org/zwilias/elm-json) [![Build status](https://ci.appveyor.com/api/projects/status/0vub0mf2oenp5lbd/branch/master?svg=true)](https://ci.appveyor.com/project/zwilias/elm-json/branch/master) [![npm version](https://badge.fury.io/js/elm-json.svg)](https://badge.fury.io/js/elm-json)
+
 > Deal with your elm.json
 
 > **NOTE:** This is very much a work in progress. May mess up your files
@@ -13,7 +14,24 @@ packages, to name a few.
 `elm.json` itself. It may, however, read some files from your `ELM_HOME` when
 possible, to prevent downloading things you may already have on your filesystem.
 
-## Installation
+<!--ts-->
+   * [Installation](#installation)
+   * [Usage](#usage)
+      * [elm-json help](#elm-json-help)
+      * [Adding dependencies: elm-json install](#adding-dependencies-elm-json-install)
+         * [Examples](#examples)
+      * [Removing dependencies: elm-json uninstall](#removing-dependencies-elm-json-uninstall)
+         * [Examples](#examples-1)
+      * [Upgrading dependencies: elm-json upgrade](#upgrading-dependencies-elm-json-upgrade)
+      * [Initializing applications/packages elm-json new](#initializing-applicationspackages-elm-json-new)
+      * [For tooling: elm-json solve](#for-tooling-elm-json-solve)
+      * [Generating shell completions: elm-json completions](#generating-shell-completions-elm-json-completions)
+
+<!-- Added by: ilias, at: Mon Apr 22 17:07:44 CEST 2019 -->
+
+<!--te-->
+
+# Installation
 
 Binaries are attached to the github releases and distributed for Windows, OS X
 and Linux (statically linked with musl).
@@ -24,16 +42,16 @@ For ease of installation, an npm installer also exists:
 npm install --global elm-json
 ```
 
-## Usage
+# Usage
 
 `elm-json` offers a bunch of subcommands to make life a little easier.
 
-### `elm-json help`
+## `elm-json help`
 
 Gives a quick overview of the more common subcommands. This can also be used for
 finding documentation about specific subcommands.
 
-### `elm-json install`
+## Adding dependencies: `elm-json install`
 
 > More info: `elm-json help install`
 
@@ -42,7 +60,7 @@ works given your existing dependencies, or a particular version if you so
 choose. By adding the `--test` flag, the chosen package(s) will be added to your
 `test-dependencies` rather than your regular `dependencies`.
 
-#### Examples
+### Examples
 
 ```
 elm-json install elm/http
@@ -76,7 +94,7 @@ elm-json install elm/http elm/json -- elm/elm.json
 Add the latest possible versions of `elm/http` and `elm/json` to
 `./elm/elm.json`.
 
-### `elm-json uninstall`
+## Removing dependencies: `elm-json uninstall`
 
 > More info: `elm-json help uninstall`
 
@@ -86,7 +104,7 @@ similar but slightly simpler.
 Version bounds may not be specified and `--test` is not an allowed flag for this
 command.
 
-#### Examples
+### Examples
 
 ```
 elm-json uninstall elm/html
@@ -97,13 +115,14 @@ Removes the `elm/html` package from your dependencies.
 > **NOTE**: This subcommand does not yet support `elm.json` files with type
 > `package`.
 
-### `elm-json upgrade`
+## Upgrading dependencies: `elm-json upgrade`
 
 > More info: `elm-json help upgrade`
 
 Upgrade your dependencies.
 
-By default, this will only allow patch and minor changes for direct (test) dependencies.
+By default, this will only allow patch and minor changes for direct (test)
+dependencies.
 
 When the `--unsafe` flag is provided, major version bumps are also allowed. Note
 that this may very well break your application. Use with care!
@@ -111,7 +130,7 @@ that this may very well break your application. Use with care!
 > **NOTE**: This subcommand does not yet support `elm.json` files with type
 > `package`.
 
-### `elm-json new`
+## Initializing applications/packages `elm-json new`
 
 > More info: `elm-json new`
 
@@ -119,13 +138,14 @@ Create a new `elm.json` file, for applications or packages.
 
 This is very rudimentary right now.
 
-### `elm-json solve`
+## For tooling: `elm-json solve`
 
 > More info: `elm-json help solve`
 
-Documentation TBD. Intended for other tooling to use, not meant for human consumption.
+Documentation TBD. Intended for other tooling to use, not meant for human
+consumption.
 
-### `elm-json completions`
+## Generating shell completions: `elm-json completions`
 
 > More info: `elm-json help completions`
 
