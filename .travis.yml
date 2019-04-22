@@ -5,46 +5,33 @@ cache:
   directories:
     - /home/travis/.cargo
 
-GH_TOKEN: &GH_TOKEN
-  secure: "loTp2/aTk4A12HSxRPh9zvn+ITuQb8hSOXtwNfrT5lAY8xGxPP9hj7vBOm1Navf8Ir+7pDCz7cuk/OdynG5sq76BE7Qp8nE2CXIDxWXd9tMGr0lto7HmFGJA6Jvn82VM1wuvan622tPScrSMKLNJbH9OKo6rK6Dr2PnuBUVB0wSoN1mNrctp01BoUJMYXHD7qttdnBoXg1EAnmvOVjk5Km14hXVuEV6Y1QRTmG4X/smivNv5lapjgaB0SkOOFeIrGbqIBJr2HNf/65+0gE2DgpBHqoifnLHp7NkRXisAI8q8g+cVy2+YnVwO0XNqRpPHgMcVvUfIpg2wrkB5oNc401ka8hQP3jICTAN4iYnTNRGlD3On3ApLMl9Xx8535Z4pN/Wrj7Suopkg6Y0y+QkV+RkR7yrV5lNBoa2i4RbCnBvH+k+imGee9kLiCIOl8O4VxaWzyvbveAMBC0qyV0jBNgrHhmQMOfmbLfr/ZWiBLjq1y/1fAT2/ufjeUCmguNwqdUImoRphw8v2/vb/G5TnldLAVhNb8hXuFL6PKbGtftsmRfXj15sDsZ1ppm7iHbkcDcmglB+xCSvyEUoxWsgdvpUITZHpcwe+HWBqf/yNpYvdlv2UXpeVCAGJaO6/47CXvEug6KbpIXnwLU4Ok4VwywBfyWFrx+BdX6QdqJMmS0w="
-
-DEPLOY_TO_GITHUB: &DEPLOY_TO_GITHUB
-  before_deploy:
-    - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then strip target/$TARGET/release/elm-json; fi
-    - tar czvf elm-json-$TRAVIS_TAG-$TARGET.tar.gz -C target/$TARGET/release elm-json
-  deploy:
-    provider: releases
-    api_key: *GH_TOKEN
-    file: elm-json-$TRAVIS_TAG-$TARGET.tar.gz
-    skip_cleanup: true
-    on:
-      branch: master
-      tags: true
-
 matrix:
   include:
+    - name: OS X
+      env: MACOSX_DEPLOYMENT_TARGET=10.7 TARGET=x86_64-apple-darwin
+      os: osx
+    - name: Linux
+      env: TARGET=x86_64-unknown-linux-musl
+      addons.apt.packages: [musl-tools]
 
-  - name: Tests
-    env: RUST_BACKTRACE=1
-    script:
-      - cargo test --locked
-      - rustup component add rustfmt-preview
-      - cargo fmt --version
-      - cargo fmt --all -- --check
+before_script: rustup target add $TARGET
 
-  - name: Linux Binary
-    env: TARGET=x86_64-unknown-linux-musl
-    before_script: rustup target add $TARGET
-    script: cargo build --release --target $TARGET --locked
-    addons:
-      apt:
-        packages:
-          - musl-tools
-    <<: *DEPLOY_TO_GITHUB
+script:
+  - cargo test --locked
+  - rustup component add rustfmt-preview
+  - cargo fmt --version
+  - cargo fmt --all -- --check
 
-  - name: macOS Binary
-    env: MACOSX_DEPLOYMENT_TARGET=10.7 TARGET=x86_64-apple-darwin
-    os: osx
-    script: cargo build --release --target $TARGET --locked
-    install: true
-    <<: *DEPLOY_TO_GITHUB
+before_deploy:
+  - cargo build --release --target $TARGET --locked
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then strip target/$TARGET/release/elm-json; fi
+  - tar czvf elm-json-$TRAVIS_TAG-$TARGET.tar.gz -C target/$TARGET/release elm-json
+deploy:
+  provider: releases
+  api_key:
+    secure: "loTp2/aTk4A12HSxRPh9zvn+ITuQb8hSOXtwNfrT5lAY8xGxPP9hj7vBOm1Navf8Ir+7pDCz7cuk/OdynG5sq76BE7Qp8nE2CXIDxWXd9tMGr0lto7HmFGJA6Jvn82VM1wuvan622tPScrSMKLNJbH9OKo6rK6Dr2PnuBUVB0wSoN1mNrctp01BoUJMYXHD7qttdnBoXg1EAnmvOVjk5Km14hXVuEV6Y1QRTmG4X/smivNv5lapjgaB0SkOOFeIrGbqIBJr2HNf/65+0gE2DgpBHqoifnLHp7NkRXisAI8q8g+cVy2+YnVwO0XNqRpPHgMcVvUfIpg2wrkB5oNc401ka8hQP3jICTAN4iYnTNRGlD3On3ApLMl9Xx8535Z4pN/Wrj7Suopkg6Y0y+QkV+RkR7yrV5lNBoa2i4RbCnBvH+k+imGee9kLiCIOl8O4VxaWzyvbveAMBC0qyV0jBNgrHhmQMOfmbLfr/ZWiBLjq1y/1fAT2/ufjeUCmguNwqdUImoRphw8v2/vb/G5TnldLAVhNb8hXuFL6PKbGtftsmRfXj15sDsZ1ppm7iHbkcDcmglB+xCSvyEUoxWsgdvpUITZHpcwe+HWBqf/yNpYvdlv2UXpeVCAGJaO6/47CXvEug6KbpIXnwLU4Ok4VwywBfyWFrx+BdX6QdqJMmS0w="
+  file: elm-json-$TRAVIS_TAG-$TARGET.tar.gz
+  skip_cleanup: true
+  on:
+    branch: master
+    tags: true
