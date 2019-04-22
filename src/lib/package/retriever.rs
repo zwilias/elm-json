@@ -5,12 +5,13 @@ use crate::{
 };
 use bincode;
 use failure::{bail, format_err, Error};
+use fs2::FileExt;
 use reqwest;
 use slog::{debug, o, warn, Logger};
 use std::{
     collections::HashMap,
     env, fmt,
-    fs::{self, File},
+    fs::{self, File, OpenOptions},
     io::{BufReader, BufWriter},
     path::PathBuf,
 };
@@ -123,7 +124,10 @@ impl Retriever {
     }
 
     fn fetch_versions(&mut self) -> Result<(), Error> {
-        let mut versions: HashMap<_, _> = self.fetch_cached_versions().unwrap_or_default();
+        let file = Self::cache_file()?;
+        file.lock_exclusive()?;
+
+        let mut versions: HashMap<_, _> = self.fetch_cached_versions(&file).unwrap_or_default();
         let count = Self::count_versions(&versions);
 
         let remote_versions = self.fetch_remote_versions(count).unwrap_or_else(|_| {
@@ -138,7 +142,8 @@ impl Retriever {
             entry.extend(vs);
         }
 
-        self.save_cached_versions(&versions)?;
+        self.save_cached_versions(&file, &versions)?;
+        file.unlock()?;
 
         let mut versions: HashMap<PackageId, Vec<Version>> = versions
             .iter()
@@ -162,32 +167,37 @@ impl Retriever {
         Ok(())
     }
 
-    fn fetch_cached_versions(&self) -> Result<HashMap<package::Name, Vec<Version>>, Error> {
-        let mut p_path = Self::packages_path()?;
-        p_path.push("elm-json");
-        p_path.push("versions.dat");
-        debug!(
-            self.logger,
-            "Attempting to read cached versions from {:?}", p_path
-        );
-        let file = File::open(p_path)?;
-        let reader = BufReader::new(file);
+    fn fetch_cached_versions(
+        &self,
+        cache_file: &File,
+    ) -> Result<HashMap<package::Name, Vec<Version>>, Error> {
+        let reader = BufReader::new(cache_file);
         let versions: HashMap<package::Name, Vec<Version>> = bincode::deserialize_from(reader)?;
         Ok(versions)
     }
 
-    fn save_cached_versions(
-        &self,
-        versions: &HashMap<package::Name, Vec<Version>>,
-    ) -> Result<(), Error> {
+    fn cache_file() -> Result<File, Error> {
         let mut p_path = Self::packages_path()?;
         p_path.push("elm-json");
         fs::create_dir_all(p_path.clone())?;
         p_path.push("versions.dat");
 
-        debug!(self.logger, "Writing cached versions to {:?}", p_path);
-        let file = File::create(p_path)?;
-        let writer = BufWriter::new(file);
+        OpenOptions::new()
+            .write(true)
+            .read(true)
+            .create(true)
+            .open(p_path)
+            .map_err(|_| {
+                format_err!("I couldn't open or create the cache file where I cache version info!")
+            })
+    }
+
+    fn save_cached_versions(
+        &self,
+        cache_file: &File,
+        versions: &HashMap<package::Name, Vec<Version>>,
+    ) -> Result<(), Error> {
+        let writer = BufWriter::new(cache_file);
         bincode::serialize_into(writer, &versions)?;
         Ok(())
     }
