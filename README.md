@@ -19,15 +19,19 @@ possible, to prevent downloading things you may already have on your filesystem.
    * [Usage](#usage)
       * [elm-json help](#elm-json-help)
       * [Adding dependencies: elm-json install](#adding-dependencies-elm-json-install)
-         * [Examples](#examples)
+         * [Example: Installing the latest available version of a package](#example-installing-the-latest-available-version-of-a-package)
+         * [Example: Installing as a test-dependency](#example-installing-as-a-test-dependency)
+         * [Example: Installing multiple dependencies to a specified elm.json file](#example-installing-multiple-dependencies-to-a-specified-elmjson-file)
       * [Removing dependencies: elm-json uninstall](#removing-dependencies-elm-json-uninstall)
-         * [Examples](#examples-1)
+         * [Example: Uninstalling a package](#example-uninstalling-a-package)
       * [Upgrading dependencies: elm-json upgrade](#upgrading-dependencies-elm-json-upgrade)
+         * [Example: Safely updating all dependencies](#example-safely-updating-all-dependencies)
+         * [Example: Major version upgrades for your dependencies](#example-major-version-upgrades-for-your-dependencies)
       * [Initializing applications/packages elm-json new](#initializing-applicationspackages-elm-json-new)
       * [For tooling: elm-json solve](#for-tooling-elm-json-solve)
       * [Generating shell completions: elm-json completions](#generating-shell-completions-elm-json-completions)
 
-<!-- Added by: ilias, at: Mon Apr 22 17:07:44 CEST 2019 -->
+<!-- Added by: ilias, at: Mon Apr 22 17:31:50 CEST 2019 -->
 
 <!--te-->
 
@@ -90,7 +94,7 @@ works given your existing dependencies, or a particular version if you so
 choose. By adding the `--test` flag, the chosen package(s) will be added to your
 `test-dependencies` rather than your regular `dependencies`.
 
-### Examples
+### Example: Installing the latest available version of a package
 
 ```
 elm-json install elm/http
@@ -105,6 +109,7 @@ install`.
 For applications, this will pick the latest available version, adding all
 indirect dependencies as well.
 
+### Example: Installing as a test-dependency
 
 ```
 elm-json install --test elm/http@2.0.0
@@ -116,6 +121,8 @@ For packages, the provided version is used as the lower bound, with the next
 major being used as the exclusive upper bound.
 
 For applications, this will install exactly the specified version.
+
+### Example: Installing multiple dependencies to a specified `elm.json` file
 
 ```
 elm-json install elm/http elm/json -- elm/elm.json
@@ -146,7 +153,7 @@ similar but slightly simpler.
 Version bounds may not be specified and `--test` is not an allowed flag for this
 command.
 
-### Examples
+### Example: Uninstalling a package
 
 ```
 elm-json uninstall elm/html
@@ -173,8 +180,6 @@ ARGS:
     <INPUT>    The elm.json file to upgrade [default: elm.json]
 ```
 
-Upgrade your dependencies.
-
 By default, this will only allow patch and minor changes for direct (test)
 dependencies.
 
@@ -183,6 +188,32 @@ that this may very well break your application. Use with care!
 
 > **NOTE**: This subcommand does not yet support `elm.json` files with type
 > `package`.
+
+### Example: Safely updating all dependencies
+
+```
+elm-json upgrade
+```
+
+This command will check if any updates can safely be applied. In practice this
+means that for your direct dependencies and direct test-dependencies, we'll look
+for newer versions with the same major version number. Your indirect
+dependencies and indirect test-dependencies may be modified in more ways,
+depending on the constraints set by your direct dependencies.
+
+### Example: Major version upgrades for your dependencies
+
+```
+elm-json upgrade --unsafe
+```
+
+If major version changes are available, this will attempt to apply them. Note
+that this may still not update all dependencies to their latest release, if you
+have another dependency preventing to do so.
+
+If you want to upgrade a specific package to a specific version, try running
+`elm-json install author/project@version`, which will tell you what package(s)
+are preventing this from happening.
 
 ## Initializing applications/packages `elm-json new`
 
