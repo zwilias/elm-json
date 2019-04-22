@@ -2,8 +2,8 @@
 
 use colored::Colorize;
 use elm_json::cli;
-use failure::Error;
-use slog::{o, Drain};
+use failure::{bail, Error};
+use slog::{o, Drain, Logger};
 
 fn main() {
     if let Err(e) = run() {
@@ -27,25 +27,22 @@ fn run() -> Result<(), Error> {
         _ => slog::Level::Trace,
     };
 
+    let logger = make_logger(min_log_level);
+
+    match matches.subcommand() {
+        ("solve", Some(matches)) => cli::solve::run(matches, &logger),
+        ("upgrade", Some(matches)) => cli::upgrade::run(matches, &logger),
+        ("install", Some(matches)) => cli::install::run(matches, &logger),
+        ("new", Some(matches)) => cli::new::run(matches, &logger),
+        ("completions", Some(matches)) => cli::completions::run(matches),
+        _ => bail!("Unsupported command?!"),
+    }
+}
+
+fn make_logger(min_log_level: slog::Level) -> Logger {
     let decorator = slog_term::TermDecorator::new().build();
     let drain = slog_term::CompactFormat::new(decorator).build().fuse();
     let drain = slog::LevelFilter::new(drain, min_log_level).fuse();
     let drain = slog_async::Async::new(drain).build().fuse();
-    let logger = slog::Logger::root(drain, o!());
-
-    if let Some(matches) = matches.subcommand_matches("solve") {
-        cli::solve::run(matches, &logger)
-    } else if let Some(matches) = matches.subcommand_matches("upgrade") {
-        cli::upgrade::run(matches, &logger)
-    } else if let Some(matches) = matches.subcommand_matches("install") {
-        cli::install::run(matches, &logger)
-    } else if let Some(matches) = matches.subcommand_matches("uninstall") {
-        cli::uninstall::run(matches, &logger)
-    } else if let Some(matches) = matches.subcommand_matches("new") {
-        cli::new::run(matches, &logger)
-    } else if let Some(matches) = matches.subcommand_matches("completions") {
-        cli::completions::run(matches)
-    } else {
-        unreachable!();
-    }
+    slog::Logger::root(drain, o!())
 }
