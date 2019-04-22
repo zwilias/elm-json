@@ -10,10 +10,11 @@ use crate::{
 use clap::ArgMatches;
 use colored::Colorize;
 use failure::{format_err, Error};
+use serde::ser::Serialize;
 use std::{
     collections::{BTreeMap, HashSet},
     fs::File,
-    io::BufReader,
+    io::{BufReader, BufWriter},
 };
 
 pub fn read_elm_json(matches: &ArgMatches) -> Result<Project, Error> {
@@ -23,6 +24,21 @@ pub fn read_elm_json(matches: &ArgMatches) -> Result<Project, Error> {
     let reader = BufReader::new(file);
     let info: Project = serde_json::from_reader(reader)?;
     Ok(info)
+}
+
+pub fn write_elm_json(project: &Project, matches: &ArgMatches) -> Result<(), Error> {
+    let path = matches.value_of("INPUT").unwrap();
+    let file = File::create(path).map_err(|_| {
+        format_err!(
+            "I tried to write to {} but failed to do so. Do you have the required access rights?",
+            path
+        )
+    })?;
+    let writer = BufWriter::new(file);
+    let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
+    let mut serializer = serde_json::Serializer::with_formatter(writer, formatter);
+    project.serialize(&mut serializer)?;
+    Ok(())
 }
 
 pub fn find_by_name(

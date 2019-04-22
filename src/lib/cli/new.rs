@@ -97,7 +97,7 @@ fn create_elm_json(info: &Project) -> Result<(), Error> {
     let file = OpenOptions::new()
         .write(true)
         .create_new(true)
-        .open("elm.json")?;
+        .open("elm.json").map_err(|_| format_err!("I tried to create a new elm.json file but failed! Either an elm.json already exists or I cannot write in the current directory."))?;
     let writer = BufWriter::new(file);
     let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
     let mut serializer = serde_json::Serializer::with_formatter(writer, formatter);

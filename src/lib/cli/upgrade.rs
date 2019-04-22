@@ -9,9 +9,7 @@ use clap::ArgMatches;
 use colored::Colorize;
 use dialoguer::Confirmation;
 use failure::Error;
-use serde::ser::Serialize;
 use slog::Logger;
-use std::{fs::File, io::BufWriter};
 
 pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
     match util::read_elm_json(&matches)? {
@@ -72,19 +70,13 @@ fn upgrade_application(
         &deps.1.indirect,
     );
 
+    let updated = Project::Application(info.with_deps(deps.0).with_test_deps(deps.1));
     if matches.is_present("yes")
         || Confirmation::new()
             .with_text("Should I make these changes?")
             .interact()?
     {
-        let path = matches.value_of("INPUT").unwrap();
-        let file = File::create(path)?;
-        let writer = BufWriter::new(file);
-        let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
-        let mut serializer = serde_json::Serializer::with_formatter(writer, formatter);
-        let val = Project::Application(info.with_deps(deps.0).with_test_deps(deps.1));
-        val.serialize(&mut serializer)?;
-
+        util::write_elm_json(&updated, &matches)?;
         println!("Saved updated elm.json!");
     } else {
         println!("Aborting!");
