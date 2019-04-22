@@ -12,7 +12,10 @@ matrix:
       os: osx
     - name: Linux
       env: TARGET=x86_64-unknown-linux-musl
-      addons.apt.packages: [musl-tools]
+      addons:
+        apt:
+          packages:
+            - musl-tools
 
 before_script: rustup target add $TARGET
 
