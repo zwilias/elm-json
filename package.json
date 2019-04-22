@@ -2,6 +2,9 @@
   "name": "elm-json",
   "version": "0.1.1",
   "description": "Deal with your elm.json",
+  "author": "Ilias Van Peer",
+  "license": "MIT",
+  "repository": "zwilias/elm-json",
   "preferGlobal": true,
   "main": "index.js",
   "scripts": {
