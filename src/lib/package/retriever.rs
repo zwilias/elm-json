@@ -6,7 +6,7 @@ use crate::{
 use bincode;
 use failure::{bail, format_err, Error};
 use reqwest;
-use slog::{o, trace, warn, Logger};
+use slog::{debug, o, warn, Logger};
 use std::{
     collections::HashMap,
     env, fmt,
@@ -161,11 +161,11 @@ impl Retriever {
 
     fn fetch_cached_versions(&self) -> Result<HashMap<String, Vec<Version>>, Error> {
         let mut p_path = Self::packages_path()?;
-        p_path.push("elm-json/versions.dat");
-        trace!(
+        p_path.push("elm-json");
+        p_path.push("versions.dat");
+        debug!(
             self.logger,
-            "Attempting to read cached versions from {:?}",
-            p_path
+            "Attempting to read cached versions from {:?}", p_path
         );
         let file = File::open(p_path)?;
         let reader = BufReader::new(file);
@@ -175,9 +175,10 @@ impl Retriever {
 
     fn save_cached_versions(&self, versions: &HashMap<String, Vec<Version>>) -> Result<(), Error> {
         let mut p_path = Self::packages_path()?;
-        p_path.push("elm-json/versions.dat");
+        p_path.push("elm-json");
+        p_path.push("versions.dat");
 
-        trace!(self.logger, "Writing cached versions to {:?}", p_path);
+        debug!(self.logger, "Writing cached versions to {:?}", p_path);
         let file = File::create(p_path)?;
         let writer = BufWriter::new(file);
         bincode::serialize_into(writer, &versions)?;
@@ -185,7 +186,7 @@ impl Retriever {
     }
 
     fn fetch_remote_versions(&self, from: usize) -> Result<HashMap<String, Vec<Version>>, Error> {
-        trace!(self.logger, "Fetching versions since {}", from);
+        debug!(self.logger, "Fetching versions since {}", from);
         let url = format!("https://package.elm-lang.org/all-packages/since/{}", from);
         let mut resp = self.client.get(&url).send()?;
 
@@ -212,11 +213,9 @@ impl Retriever {
     }
 
     fn fetch_deps(&mut self, pkg: &Summary) -> Result<Vec<Incompatibility<PackageId>>, Error> {
-        trace!(
+        debug!(
             self.logger,
-            "Fetching dependencies for {}@{}",
-            pkg.id,
-            pkg.version
+            "Fetching dependencies for {}@{}", pkg.id, pkg.version
         );
 
         let url = format!(
@@ -232,11 +231,9 @@ impl Retriever {
         &mut self,
         pkg: &Summary,
     ) -> Result<Vec<Incompatibility<PackageId>>, Error> {
-        trace!(
+        debug!(
             self.logger,
-            "Attempting to read stored deps for {}@{}",
-            pkg.id,
-            pkg.version
+            "Attempting to read stored deps for {}@{}", pkg.id, pkg.version
         );
 
         let mut p_path = Self::packages_path()?;
@@ -274,7 +271,7 @@ impl Retriever {
             ),
         ));
 
-        trace!(self.logger, "Caching incompatibilities {:#?}", deps);
+        debug!(self.logger, "Caching incompatibilities {:#?}", deps);
 
         self.deps_cache.insert(pkg.clone(), deps.clone());
         deps
@@ -338,11 +335,9 @@ impl retriever::Retriever for Retriever {
     }
 
     fn best(&mut self, pkg: &Self::PackageId, con: &Constraint) -> Result<Version, Error> {
-        trace!(
+        debug!(
             self.logger,
-            "Finding best version for package {} with constraint {}",
-            pkg,
-            con
+            "Finding best version for package {} with constraint {}", pkg, con
         );
         if let Some(version) = self.preferred_versions.get(pkg) {
             if con.satisfies(version) {
