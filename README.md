@@ -48,12 +48,42 @@ npm install --global elm-json
 
 ## `elm-json help`
 
+```
+USAGE:
+    elm-json [FLAGS] <SUBCOMMAND>
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+    -v, --verbose    Sets the level of verbosity
+
+SUBCOMMANDS:
+    help         Prints this message or the help of the given subcommand(s)
+    install      Install a package
+    new          Create a new elm.json file
+    uninstall    Uninstall a package
+    upgrade      Bring your dependencies up to date
+```
+
 Gives a quick overview of the more common subcommands. This can also be used for
 finding documentation about specific subcommands.
 
 ## Adding dependencies: `elm-json install`
 
-> More info: `elm-json help install`
+```
+USAGE:
+    elm-json install [FLAGS] <PACKAGE>... [-- <INPUT>]
+
+FLAGS:
+    -h, --help       Prints help information
+        --test       Install as a test-dependency
+    -V, --version    Prints version information
+        --yes        Answer "yes" to all questions
+
+ARGS:
+    <PACKAGE>...    Package to install, e.g. elm/core or elm/core@1.0.2
+    <INPUT>         The elm.json file to upgrade [default: elm.json]
+```
 
 `elm-json install` allows installing dependencies, at the latest version that
 works given your existing dependencies, or a particular version if you so
@@ -96,7 +126,19 @@ Add the latest possible versions of `elm/http` and `elm/json` to
 
 ## Removing dependencies: `elm-json uninstall`
 
-> More info: `elm-json help uninstall`
+```
+USAGE:
+    elm-json uninstall [FLAGS] <PACKAGE>... [-- <INPUT>]
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+        --yes        Answer "yes" to all questions
+
+ARGS:
+    <PACKAGE>...    Package to uninstall, e.g. elm/html
+    <INPUT>         The elm.json file to upgrade [default: elm.json]
+```
 
 Uninstall dependencies. This is the inverse of `elm-json install` and its API is
 similar but slightly simpler.
@@ -117,7 +159,19 @@ Removes the `elm/html` package from your dependencies.
 
 ## Upgrading dependencies: `elm-json upgrade`
 
-> More info: `elm-json help upgrade`
+```
+USAGE:
+    elm-json upgrade [FLAGS] [INPUT]
+
+FLAGS:
+    -h, --help       Prints help information
+        --unsafe     Allow major versions bumps
+    -V, --version    Prints version information
+        --yes        Answer "yes" to all questions
+
+ARGS:
+    <INPUT>    The elm.json file to upgrade [default: elm.json]
+```
 
 Upgrade your dependencies.
 
@@ -132,7 +186,14 @@ that this may very well break your application. Use with care!
 
 ## Initializing applications/packages `elm-json new`
 
-> More info: `elm-json new`
+```
+USAGE:
+    elm-json new
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+```
 
 Create a new `elm.json` file, for applications or packages.
 
@@ -140,13 +201,40 @@ This is very rudimentary right now.
 
 ## For tooling: `elm-json solve`
 
-> More info: `elm-json help solve`
+```
+USAGE:
+    elm-json solve [FLAGS] [OPTIONS] [--] [INPUT]
+
+FLAGS:
+    -h, --help        Prints help information
+    -m, --minimize    Choose lowest available versions rather than highest
+        --test        Promote test-dependencies to top-level dependencies
+    -V, --version     Prints version information
+
+OPTIONS:
+    -e, --extra <PACKAGE>...    Specify extra dependencies, e.g. elm/core or
+                                elm/core@1.0.2
+
+ARGS:
+    <INPUT>    The elm.json file to solve [default: elm.json]
+```
 
 Documentation TBD. Intended for other tooling to use, not meant for human
 consumption.
 
 ## Generating shell completions: `elm-json completions`
 
-> More info: `elm-json help completions`
+```
+USAGE:
+    elm-json completions <SHELL>
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+ARGS:
+    <SHELL>    The shell to generate the script for [possible values: bash,
+               fish, zsh]
+```
 
 Create completion scripts for `elm-json` for `bash`/`fish`/`zsh`.
