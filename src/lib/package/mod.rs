@@ -3,8 +3,10 @@ use failure::{bail, format_err, Error};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use std::collections::BTreeMap;
-use std::fmt;
-use std::str;
+use std::{
+    fmt,
+    str::{self, FromStr},
+};
 
 pub mod retriever;
 
@@ -23,6 +25,124 @@ pub struct Package {
     other: BTreeMap<String, Value>,
 }
 
+#[derive(Debug)]
+pub struct Name {
+    author: String,
+    project: String,
+}
+
+impl Name {
+    pub fn new(author: &str, project: &str) -> Result<Self, Error> {
+        Self::validate_author(author)?;
+        Self::validate_project(project)?;
+
+        Ok(Self {
+            author: author.to_string(),
+            project: project.to_string(),
+        })
+    }
+
+    fn validate_author(author: &str) -> Result<(), Error> {
+        if author.is_empty() {
+            bail!(
+                "Author name may not be empty. A valid package name looks like \"author/project\"."
+            )
+        }
+
+        if author.starts_with('-') {
+            bail!("Author name may not start with a dash. Please use your github username!")
+        }
+
+        if author.ends_with('-') {
+            bail!("Author name may not end with a dash. Please user your github username!")
+        }
+
+        if author.contains("--") {
+            bail!("Author name may not contain a double dash. Please use your github username!")
+        }
+
+        if author.len() > 39 {
+            bail!(
+                "Author name may not be over 39 characters long. Please use your github username!"
+            )
+        }
+
+        if !author
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-')
+        {
+            bail!("Author name may only contain ascii alphanumeric characters.")
+        }
+
+        Ok(())
+    }
+
+    fn validate_project(project: &str) -> Result<(), Error> {
+        if project.is_empty() {
+            bail!(
+                "Project name maybe not be empty. A valid package name looks like \"author/project\"."
+            )
+        }
+
+        if project.contains("--") {
+            bail!("Project name cannot contain a double dash.")
+        }
+
+        if project.ends_with('-') {
+            bail!("Project name cannot end with a dash.")
+        }
+
+        if !project
+            .chars()
+            .all(|x| x.is_ascii_lowercase() || x.is_digit(10) || x == '-')
+        {
+            bail!("Project name may only contains lowercase letters, digits and dashes.")
+        }
+
+        if !project.chars().nth(0).unwrap().is_ascii_lowercase() {
+            bail!("Project name must start with a letter")
+        }
+
+        Ok(())
+    }
+}
+
+impl FromStr for Name {
+    type Err = Error;
+
+    fn from_str(package: &str) -> Result<Self, Self::Err> {
+        let parts: Vec<_> = package.split('/').collect();
+        match parts.as_slice() {
+            [author, project] => Self::new(author, project),
+            _ => Err(format_err!(
+                "A valid package name look like \"author/project\""
+            )),
+        }
+    }
+}
+
+impl fmt::Display for Name {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}/{}", self.author, self.project)
+    }
+}
+
+impl Serialize for Name {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for Name {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s = String::deserialize(deserializer)?;
+        s.parse().map_err(de::Error::custom)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum Exposed {
@@ -31,7 +151,7 @@ pub enum Exposed {
 }
 
 impl Package {
-    pub fn new(name: String, summary: String, license: String) -> Self {
+    pub fn new(name: Name, summary: String, license: String) -> Self {
         let mut dependencies = BTreeMap::new();
         dependencies.insert(
             "elm/core".to_string(),
@@ -39,7 +159,7 @@ impl Package {
         );
 
         Self {
-            name,
+            name: format!("{}", name),
             summary,
             license,
             exposed_modules: Exposed::Plain(Vec::new()),
@@ -171,5 +291,27 @@ impl<'de> Deserialize<'de> for Range {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let s = String::deserialize(deserializer)?;
         s.parse().map_err(de::Error::custom)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_name() {
+        assert!("foo/bar".parse::<Name>().is_ok());
+        assert!("foo-bar-123/bar".parse::<Name>().is_ok());
+        assert!("1/bar".parse::<Name>().is_ok());
+        assert!("foo/b-r".parse::<Name>().is_ok());
+
+        assert!("".parse::<Name>().is_err());
+        assert!("/".parse::<Name>().is_err());
+        assert!("foo/".parse::<Name>().is_err());
+        assert!("/bar".parse::<Name>().is_err());
+        assert!("\n/bar".parse::<Name>().is_err());
+        assert!("-foo/bar".parse::<Name>().is_err());
+        assert!("foo-/bar".parse::<Name>().is_err());
+        assert!("foo/ba-".parse::<Name>().is_err());
     }
 }

@@ -1,4 +1,7 @@
-use crate::project::{Application, Package, Project};
+use crate::{
+    package,
+    project::{Application, Package, Project},
+};
 use clap::ArgMatches;
 use colored::Colorize;
 use dialoguer;
@@ -24,10 +27,8 @@ pub fn run(matches: &ArgMatches, _logger: &Logger) -> Result<(), Error> {
 }
 
 fn create_package(_matches: &ArgMatches) -> Result<(), Error> {
-    println!("Need settings: name, description, license, dependencies, test-dependencies");
-
     let name = until_valid(
-        validate_package_name,
+        |x| x.parse::<package::Name>(),
         "Enter a name for your package: (format: author/project)",
     )?;
     let summary = until_valid(
@@ -46,7 +47,7 @@ fn create_package(_matches: &ArgMatches) -> Result<(), Error> {
         "other..." => until_valid(
             |input| {
                 if APPROVED_LICENSES.contains(&&*input) {
-                    Ok(input)
+                    Ok(input.to_string())
                 } else {
                     Err(format_err!("Please pick a valid license"))
                 }
@@ -60,95 +61,23 @@ fn create_package(_matches: &ArgMatches) -> Result<(), Error> {
     create_elm_json(&proj)
 }
 
-fn validate_summary(summary: String) -> Result<String, Error> {
+fn validate_summary(summary: &str) -> Result<String, Error> {
     if summary.len() > 80 {
         bail!("Summary may not be over 80 characters long.")
     }
 
-    Ok(summary)
+    Ok(summary.to_string())
 }
 
-fn validate_package_name(name: String) -> Result<String, Error> {
-    let parts: Vec<_> = name.trim().split('/').collect();
-    match parts.as_slice() {
-        [author, project] => validate_author(author)
-            .and(validate_project(project))
-            .map(|_| name.trim().into()),
-        _ => Err(format_err!(
-            "A valid package name look like \"author/project\""
-        )),
-    }
-}
-
-fn validate_author(author: &str) -> Result<(), Error> {
-    if author.is_empty() {
-        bail!("Author name may not be empty. A valid package name looks like \"author/project\".")
-    }
-
-    if author.starts_with('-') {
-        bail!("Author name may not start with a dash. Please use your github username!")
-    }
-
-    if author.ends_with('-') {
-        bail!("Author name may not end with a dash. Please user your github username!")
-    }
-
-    if author.contains("--") {
-        bail!("Author name may not contain a double dash. Please use your github username!")
-    }
-
-    if author.len() > 39 {
-        bail!("Author name may not be over 39 characters long. Please use your github username!")
-    }
-
-    if !author
-        .chars()
-        .all(|c| c.is_ascii_alphanumeric() || c == '-')
-    {
-        bail!("Author name may only contain ascii alphanumeric characters.")
-    }
-
-    Ok(())
-}
-
-fn validate_project(project: &str) -> Result<(), Error> {
-    if project.is_empty() {
-        bail!(
-            "Project name maybe not be empty. A valid package name looks like \"author/project\"."
-        )
-    }
-
-    if project.contains("--") {
-        bail!("Project name cannot contain a double dash.")
-    }
-
-    if project.ends_with('-') {
-        bail!("Project name cannot end with a dash.")
-    }
-
-    if !project
-        .chars()
-        .all(|x| x.is_ascii_lowercase() || x.is_digit(10) || x == '-')
-    {
-        bail!("Project name may only contains lowercase letters, digits and dashes.")
-    }
-
-    if !project.chars().nth(0).unwrap().is_ascii_lowercase() {
-        bail!("Project name must start with a letter")
-    }
-
-    Ok(())
-}
-
-fn until_valid<F>(validate: F, prompt: &str) -> Result<String, Error>
+fn until_valid<X, F>(validate: F, prompt: &str) -> Result<X, Error>
 where
-    F: Fn(String) -> Result<String, Error>,
+    F: Fn(&str) -> Result<X, Error>,
 {
-    let mut res: String;
+    let mut res: X;
 
     loop {
-        res = dialoguer::Input::new().with_prompt(prompt).interact()?;
-        match validate(res) {
+        let res_: String = dialoguer::Input::new().with_prompt(prompt).interact()?;
+        match validate(&res_) {
             Ok(v) => {
                 res = v;
                 break;
@@ -278,27 +207,3 @@ const APPROVED_LICENSES: &[&str] = &[
     "Zlib",
     "ZPL-2.0",
 ];
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_validate_author() {
-        assert!(validate_author("foobar").is_ok());
-        assert!(validate_author("").is_err());
-        assert!(validate_author("\n").is_err());
-        assert!(validate_author("1").is_ok());
-        assert!(validate_author("foo-bar-123").is_ok());
-        assert!(validate_author("-foo").is_err());
-        assert!(validate_author("foo-").is_err());
-    }
-
-    #[test]
-    fn test_validate_project() {
-        assert!(validate_project("foobar").is_ok());
-        assert!(validate_project("").is_err());
-        assert!(validate_project("fo-").is_err());
-        assert!(validate_project("f-o").is_ok());
-    }
-}

@@ -85,9 +85,10 @@ fn install_package(matches: &ArgMatches, logger: &Logger, info: &Package) -> Res
     util::show_diff("", &info.dependencies, &deps);
     util::show_diff("test", &info.test_dependencies, &test_deps);
 
-    if Confirmation::new()
-        .with_text("Should I make these changes?")
-        .interact()?
+    if matches.is_present("yes")
+        || Confirmation::new()
+            .with_text("Should I make these changes?")
+            .interact()?
     {
         let path = matches.value_of("INPUT").unwrap();
         let file = File::create(path)?;
@@ -96,6 +97,8 @@ fn install_package(matches: &ArgMatches, logger: &Logger, info: &Package) -> Res
         let mut serializer = serde_json::Serializer::with_formatter(writer, formatter);
         let val = Project::Package(info.with_deps(deps, test_deps));
         val.serialize(&mut serializer)?;
+
+        println!("Saved updated elm.json!");
     } else {
         println!("Aborting!");
     }
@@ -193,9 +196,10 @@ fn install_application(
         &deps.1.indirect,
     );
 
-    if Confirmation::new()
-        .with_text("Should I make these changes?")
-        .interact()?
+    if matches.is_present("yes")
+        || Confirmation::new()
+            .with_text("Should I make these changes?")
+            .interact()?
     {
         let path = matches.value_of("INPUT").unwrap();
         let file = File::create(path)?;
@@ -204,6 +208,8 @@ fn install_application(
         let mut serializer = serde_json::Serializer::with_formatter(writer, formatter);
         let val = Project::Application(info.with_deps(deps.0).with_test_deps(deps.1));
         val.serialize(&mut serializer)?;
+
+        println!("Saved updated elm.json!");
     } else {
         println!("Aborting!");
     }

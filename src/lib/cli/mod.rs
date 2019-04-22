@@ -29,6 +29,10 @@ pub fn build() -> App<'static, 'static> {
                         .help("Allow major versions bumps")
                         .long("unsafe"),
                 )
+                .arg(Arg::with_name("yes")
+                     .help("Answer \"yes\" to all questions")
+                     .long("yes")
+                )
                 .arg(
                     Arg::with_name("INPUT")
                         .help("The elm.json file to upgrade")
@@ -42,6 +46,10 @@ pub fn build() -> App<'static, 'static> {
                     Arg::with_name("test")
                         .help("Install as a test-dependency")
                         .long("test"),
+                )
+                .arg(Arg::with_name("yes")
+                     .help("Answer \"yes\" to all questions")
+                     .long("yes")
                 )
                 .arg(
                     Arg::with_name("extra")
@@ -61,6 +69,10 @@ pub fn build() -> App<'static, 'static> {
         .subcommand(
             SubCommand::with_name("uninstall")
                 .about("Uninstall a package")
+                .arg(Arg::with_name("yes")
+                     .help("Answer \"yes\" to all questions")
+                     .long("yes")
+                )
                 .arg(
                     Arg::with_name("extra")
                         .help("Package to uninstall, e.g. elm/html")
