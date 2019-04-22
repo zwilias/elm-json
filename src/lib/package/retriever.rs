@@ -61,7 +61,7 @@ impl From<String> for PackageId {
 }
 
 impl Retriever {
-    pub fn new(logger: &Logger, elm_version: Constraint) -> Self {
+    pub fn new(logger: &Logger, elm_version: Constraint) -> Result<Self, Error> {
         let mut deps_cache = HashMap::new();
 
         deps_cache.insert(
@@ -75,14 +75,17 @@ impl Retriever {
         let logger = logger.new(o!("phase" => "retrieve"));
         let client = reqwest::Client::new();
 
-        Retriever {
+        let mut retriever = Retriever {
             deps_cache,
             versions: HashMap::new(),
             preferred_versions: HashMap::new(),
             logger,
             client,
             mode: Mode::Maximize,
-        }
+        };
+
+        retriever.fetch_versions()?;
+        Ok(retriever)
     }
 
     pub fn minimize(&mut self) {
@@ -119,7 +122,7 @@ impl Retriever {
         count
     }
 
-    pub fn fetch_versions(&mut self) -> Result<(), Error> {
+    fn fetch_versions(&mut self) -> Result<(), Error> {
         let mut versions: HashMap<_, _> = self.fetch_cached_versions().unwrap_or_default();
         let count = Self::count_versions(&versions);
 

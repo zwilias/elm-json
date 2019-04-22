@@ -41,8 +41,7 @@ fn upgrade_application(
     };
     let elm_version = info.elm_version();
 
-    let mut retriever: Retriever = Retriever::new(&logger, elm_version.into());
-    retriever.fetch_versions()?;
+    let mut retriever: Retriever = Retriever::new(&logger, elm_version.into())?;
 
     retriever.add_deps(&info.dependencies(&strictness));
     retriever.add_deps(&info.test_dependencies(&strictness));

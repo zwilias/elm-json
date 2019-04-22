@@ -39,8 +39,7 @@ fn uninstall_application(
     let strictness = semver::Strictness::Exact;
     let elm_version = info.elm_version();
 
-    let mut retriever: Retriever = Retriever::new(&logger, elm_version.into());
-    retriever.fetch_versions()?;
+    let mut retriever: Retriever = Retriever::new(&logger, elm_version.into())?;
 
     let extras: HashSet<String> = matches
         .values_of_lossy("extra")
