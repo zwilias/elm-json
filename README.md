@@ -1,4 +1,4 @@
-# elm-json
+# elm-json [![Build Status](https://travis-ci.org/zwilias/elm-json.svg?branch=master)](https://travis-ci.org/zwilias/elm-json) [![Build status](https://ci.appveyor.com/api/projects/status/0vub0mf2oenp5lbd/branch/master?svg=true)](https://ci.appveyor.com/project/zwilias/elm-json/branch/master) [![npm version](https://badge.fury.io/js/elm-json.svg)](https://badge.fury.io/js/elm-json)
 > Deal with your elm.json
 
 > **NOTE:** This is very much a work in progress. May mess up your files
