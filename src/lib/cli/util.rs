@@ -3,13 +3,27 @@ use crate::{
         self,
         retriever::{PackageId, Retriever},
     },
+    project::Project,
     semver::{self, Version},
     solver,
 };
 use clap::ArgMatches;
 use colored::Colorize;
-use failure::Error;
-use std::collections::{BTreeMap, HashSet};
+use failure::{format_err, Error};
+use std::{
+    collections::{BTreeMap, HashSet},
+    fs::File,
+    io::BufReader,
+};
+
+pub fn read_elm_json(matches: &ArgMatches) -> Result<Project, Error> {
+    let path = matches.value_of("INPUT").unwrap();
+    let file = File::open(path)
+        .map_err(|_| format_err!("I could not read an elm.json file from {}!", path))?;
+    let reader = BufReader::new(file);
+    let info: Project = serde_json::from_reader(reader)?;
+    Ok(info)
+}
 
 pub fn find_by_name(
     name: &package::Name,

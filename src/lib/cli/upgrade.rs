@@ -11,18 +11,10 @@ use dialoguer::Confirmation;
 use failure::Error;
 use serde::ser::Serialize;
 use slog::Logger;
-use std::{
-    fs::File,
-    io::{BufReader, BufWriter},
-};
+use std::{fs::File, io::BufWriter};
 
 pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
-    let path = matches.value_of("INPUT").unwrap();
-    let file = File::open(path)?;
-    let reader = BufReader::new(file);
-    let info: Project = serde_json::from_reader(reader)?;
-
-    match info {
+    match util::read_elm_json(&matches)? {
         Project::Application(app) => upgrade_application(&matches, &logger, &app),
         Project::Package(_pkg) => {
             util::unsupported("Upgrading dependencies for packages is not yet supported.")

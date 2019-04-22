@@ -1,10 +1,23 @@
 #![warn(unused_extern_crates)]
 
+use colored::Colorize;
 use elm_json::cli;
 use failure::Error;
 use slog::{o, Drain};
 
-fn main() -> Result<(), Error> {
+fn main() {
+    if let Err(e) = run() {
+        eprintln!(
+            "\n{}\n",
+            cli::util::format_header("UNRECOVERABLE ERROR OCCURRED").red()
+        );
+
+        eprintln!("{}", e);
+        std::process::exit(1);
+    }
+}
+
+fn run() -> Result<(), Error> {
     let matches = cli::build().get_matches();
 
     let min_log_level = match matches.occurrences_of("verbose") {

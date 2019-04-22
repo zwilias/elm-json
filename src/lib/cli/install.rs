@@ -15,19 +15,10 @@ use failure::Error;
 use petgraph::{self, visit::IntoNodeReferences};
 use serde::ser::Serialize;
 use slog::Logger;
-use std::{
-    collections::BTreeMap,
-    fs::File,
-    io::{BufReader, BufWriter},
-};
+use std::{collections::BTreeMap, fs::File, io::BufWriter};
 
 pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
-    let path = matches.value_of("INPUT").unwrap();
-    let file = File::open(path)?;
-    let reader = BufReader::new(file);
-    let info: Project = serde_json::from_reader(reader)?;
-
-    match info {
+    match util::read_elm_json(&matches)? {
         Project::Application(app) => install_application(&matches, &logger, &app),
         Project::Package(pkg) => install_package(&matches, &logger, &pkg),
     }

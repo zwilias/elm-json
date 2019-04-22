@@ -6,7 +6,7 @@ pub mod new;
 pub mod solve;
 pub mod uninstall;
 pub mod upgrade;
-mod util;
+pub mod util;
 
 pub fn build() -> App<'static, 'static> {
     App::new("elm-json")
