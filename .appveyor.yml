@@ -14,10 +14,10 @@ install:
 build: false
 
 test_script:
-  - cargo test --release --tests --locked
-  - cargo build --release
+  - cargo test --locked
 
 before_deploy:
+  - cargo build --release --locked
   - ps: |
         $NAME = "elm-json-${env:APPVEYOR_REPO_TAG_NAME}-x86_64-pc-windows-msvc"
         7z a -ttar "${NAME}.tar" ./target/release/elm-json.exe
