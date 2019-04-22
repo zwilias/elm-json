@@ -114,8 +114,9 @@ where
     let it = Diff::new(&left, &right);
     if !it.is_empty() {
         println!(
-            "I want to make some changes to your {} dependencies\n",
-            title.bold()
+            "I want to make some changes to your {}{}dependencies\n",
+            title.bold(),
+            if title.is_empty() { "" } else { " " }
         );
         it.print();
         println!();

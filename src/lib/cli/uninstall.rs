@@ -1,7 +1,7 @@
 use super::util;
 use crate::{
     package::{self, retriever::Retriever},
-    project::{self, Application, Project},
+    project::{self, Application, Package, Project},
     semver,
     solver::Resolver,
 };
@@ -10,14 +10,12 @@ use colored::Colorize;
 use dialoguer::Confirmation;
 use failure::Error;
 use slog::Logger;
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 
 pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
     match util::read_elm_json(&matches)? {
         Project::Application(app) => uninstall_application(&matches, &logger, &app),
-        Project::Package(_pkg) => {
-            util::unsupported("Uninstalling dependencies for packages is not yet supported")
-        }
+        Project::Package(pkg) => uninstall_package(&matches, &logger, &pkg),
     }
 }
 
@@ -118,6 +116,52 @@ fn uninstall_application(
     {
         util::write_elm_json(&updated, &matches)?;
         println!("Saved updated elm.json!");
+    } else {
+        println!("Aborting!");
+    }
+
+    Ok(())
+}
+
+fn uninstall_package(matches: &ArgMatches, _logger: &Logger, info: &Package) -> Result<(), Error> {
+    let extras: Result<HashSet<_>, Error> = matches
+        .values_of_lossy("extra")
+        .unwrap_or_else(Vec::new)
+        .iter()
+        .map(|p| p.parse::<package::Name>())
+        .collect();
+    let extras = extras?;
+
+    let new_deps: BTreeMap<_, _> = info
+        .dependencies
+        .iter()
+        .filter(|&(k, _)| !extras.contains(&k.clone()))
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect();
+
+    let new_test_deps: BTreeMap<_, _> = info
+        .test_dependencies
+        .iter()
+        .filter(|&(k, _)| !extras.contains(&k.clone()))
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect();
+
+    println!(
+        "\n{}\n",
+        util::format_header("PACKAGE CHANGES READY").green()
+    );
+
+    util::show_diff("", &info.dependencies, &new_deps);
+    util::show_diff("test", &info.test_dependencies, &new_test_deps);
+
+    let updated = Project::Package(info.with_deps(new_deps, new_test_deps));
+    if matches.is_present("yes")
+        || Confirmation::new()
+            .with_text("Should I make these changes?")
+            .interact()?
+    {
+        util::write_elm_json(&updated, &matches)?;
+        println!("Saved!");
     } else {
         println!("Aborting!");
     }

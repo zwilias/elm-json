@@ -33,6 +33,7 @@ fn run() -> Result<(), Error> {
         ("solve", Some(matches)) => cli::solve::run(matches, &logger),
         ("upgrade", Some(matches)) => cli::upgrade::run(matches, &logger),
         ("install", Some(matches)) => cli::install::run(matches, &logger),
+        ("uninstall", Some(matches)) => cli::uninstall::run(matches, &logger),
         ("new", Some(matches)) => cli::new::run(matches, &logger),
         ("completions", Some(matches)) => cli::completions::run(matches),
         _ => bail!("Unsupported command?!"),
