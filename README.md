@@ -15,7 +15,14 @@ possible, to prevent downloading things you may already have on your filesystem.
 
 ## Installation
 
-TODO: set up an `npm` package with binwrap, probably?
+Binaries are attached to the github releases and distributed for Windows, OS X
+and Linux (statically linked with musl).
+
+For ease of installation, an npm installer also exists:
+
+```
+npm install --global elm-json
+```
 
 ## Usage
 
@@ -131,4 +138,4 @@ Create completion scripts for `elm-json` for `bash`/`fish`/`zsh`.
 - [ ] Make errors more readable
 - [ ] Add more/better documentation
 - [ ] Learn Rust
-- [ ] Set up npm package for ease of installation
+- [x] Set up npm package for ease of installation
