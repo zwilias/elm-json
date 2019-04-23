@@ -1,6 +1,6 @@
 [package]
 name = "elm-json"
-version = "0.1.2"
+version = "0.1.3"
 authors = ["ilias <mail@ilias.xyz>"]
 edition = "2018"
 
