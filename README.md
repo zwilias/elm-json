@@ -161,9 +161,6 @@ elm-json uninstall elm/html
 
 Removes the `elm/html` package from your dependencies.
 
-> **NOTE**: This subcommand does not yet support `elm.json` files with type
-> `package`.
-
 ## Upgrading dependencies: `elm-json upgrade`
 
 ```
