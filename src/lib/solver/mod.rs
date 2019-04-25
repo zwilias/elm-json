@@ -427,8 +427,6 @@ where
                     }
                 }
                 Err(e) => {
-                    // This case encapsulates everything from "no versions were found" to "the package
-                    // literally doesn't exist in the index"
                     info!(
                         self.logger,
                         "Failed to add package {} {}: {}", package.0, package.1, e
@@ -436,7 +434,11 @@ where
                     let pkgs = indexmap!(
                         package.0.clone() => package.1.clone()
                     );
-                    self.incompatibility(pkgs, IncompatibilityCause::Unavailable);
+                    if self.retriever.count_versions(package.0) == 0 {
+                        self.incompatibility(pkgs, IncompatibilityCause::UnknownPackage);
+                    } else {
+                        self.incompatibility(pkgs, IncompatibilityCause::Unavailable);
+                    }
                 }
             }
             res

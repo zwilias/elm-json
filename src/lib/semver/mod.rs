@@ -380,7 +380,7 @@ impl From<Version> for Range {
 impl fmt::Display for Range {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match (&self.lower, &self.upper) {
-            (Unbounded, Unbounded) => write!(f, "any"),
+            (Unbounded, Unbounded) => write!(f, "at any version"),
             (Unbounded, b) => write!(f, "{}", b.show(false)),
             (a, Unbounded) => write!(f, "{}", a.show(true)),
             (Closed(a), Open(b)) => write!(f, "{} <= v < {}", a, b),

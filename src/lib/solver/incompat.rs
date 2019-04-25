@@ -22,6 +22,7 @@ SOFTWARE.
 
 use super::summary::{self, Summary};
 use crate::semver::Constraint;
+use colored::Colorize;
 use indexmap::{indexmap, IndexMap};
 use itertools::Itertools;
 use std::fmt;
@@ -31,6 +32,7 @@ pub enum IncompatibilityCause {
     Dependency,
     Root,
     Unavailable,
+    UnknownPackage,
     Derived(usize, usize),
 }
 
@@ -104,10 +106,15 @@ where
                 let package = self.deps.get_index(0).unwrap();
                 format!("{} is unavailable", Self::show_pkg(package.0, package.1))
             }
+            IncompatibilityCause::UnknownPackage => {
+                assert!(self.deps.len() == 1);
+                let package = self.deps.get_index(0).unwrap();
+                format!("{} does not appear to exist", package.0.to_string().bold())
+            }
             IncompatibilityCause::Root => "the root package was chosen".to_string(),
             IncompatibilityCause::Derived(_, _) => {
                 if self.deps.len() == 1 {
-                    "version solving failed".to_string()
+                    "no valid set of package versions could be found".to_string()
                 } else if self.deps.len() == 2 {
                     let p1 = self.deps.get_index(0).unwrap();
                     let p2 = self.deps.get_index(1).unwrap();
@@ -131,9 +138,9 @@ where
 
     fn show_pkg(pkg: &P, constraint: &Constraint) -> String {
         if pkg.is_root() {
-            "root".to_string()
+            "this project".to_string()
         } else {
-            format!("{} {}", pkg, constraint)
+            format!("{} {}", pkg.to_string().bold(), constraint)
         }
     }
 
