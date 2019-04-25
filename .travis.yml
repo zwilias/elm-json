@@ -1,9 +1,7 @@
 language: rust
 sudo: false
 
-cache:
-  directories:
-    - /home/travis/.cargo
+cache: cargo
 
 matrix:
   include:
