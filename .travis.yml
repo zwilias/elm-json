@@ -1,9 +1,6 @@
 language: rust
-sudo: false
 
-cache:
-  directories:
-    - /home/travis/.cargo
+cache: cargo
 
 matrix:
   include:
@@ -26,8 +23,7 @@ script:
   - cargo fmt --all -- --check
 
 before_deploy:
-  - cargo build --release --target $TARGET --locked
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then strip target/$TARGET/release/elm-json; fi
+  - RUSTFLAGS="-C link-arg=-s" cargo build --release --target $TARGET --locked
   - tar czvf elm-json-$TRAVIS_TAG-$TARGET.tar.gz -C target/$TARGET/release elm-json
 deploy:
   provider: releases
