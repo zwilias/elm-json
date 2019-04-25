@@ -136,14 +136,14 @@ fn uninstall_package(matches: &ArgMatches, _logger: &Logger, info: &Package) -> 
         .dependencies
         .iter()
         .filter(|&(k, _)| !extras.contains(&k.clone()))
-        .map(|(k, v)| (k.clone(), v.clone()))
+        .map(|(k, v)| (k.clone(), *v))
         .collect();
 
     let new_test_deps: BTreeMap<_, _> = info
         .test_dependencies
         .iter()
         .filter(|&(k, _)| !extras.contains(&k.clone()))
-        .map(|(k, v)| (k.clone(), v.clone()))
+        .map(|(k, v)| (k.clone(), *v))
         .collect();
 
     println!(
