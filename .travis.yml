@@ -1,6 +1,10 @@
 language: rust
-
 cache: cargo
+
+addons:
+  apt:
+    packages:
+      - musl-tools
 
 matrix:
   include:
@@ -9,22 +13,23 @@ matrix:
       os: osx
     - name: Linux
       env: TARGET=x86_64-unknown-linux-musl
-      addons:
-        apt:
-          packages:
-            - musl-tools
 
-before_script: rustup target add $TARGET
+before_script:
+  - rustup target add $TARGET
+  - rustup component add rustfmt-preview
+  - rustup component add clippy
+  - cargo fmt --version
+  - cargo clippy --version
 
 script:
   - cargo test --locked
-  - rustup component add rustfmt-preview
-  - cargo fmt --version
+  - cargo clippy --all-targets --all-features -- -D warnings
   - cargo fmt --all -- --check
 
 before_deploy:
   - RUSTFLAGS="-C link-arg=-s" cargo build --release --target $TARGET --locked
   - tar czvf elm-json-$TRAVIS_TAG-$TARGET.tar.gz -C target/$TARGET/release elm-json
+
 deploy:
   provider: releases
   api_key:
