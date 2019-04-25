@@ -18,6 +18,7 @@ before_script: rustup target add $TARGET
 
 script:
   - cargo test --locked
+  - rustup component add rustfmt-preview
   - cargo fmt --version
   - cargo fmt --all -- --check
 
