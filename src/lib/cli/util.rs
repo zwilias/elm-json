@@ -66,11 +66,7 @@ pub fn add_extra_deps(
 ) -> Result<HashSet<package::Name>, Error> {
     let mut extras = HashSet::new();
 
-    for dep in matches
-        .values_of_lossy("extra")
-        .unwrap_or_else(Vec::new)
-        .iter()
-    {
+    for dep in &matches.values_of_lossy("extra").unwrap_or_else(Vec::new) {
         let parts: Vec<&str> = dep.split('@').collect();
         match parts.as_slice() {
             [name] => {
@@ -90,7 +86,7 @@ pub fn add_extra_deps(
     Ok(extras)
 }
 
-pub fn error_out(msg: &str, e: Error) {
+pub fn error_out(msg: &str, e: &Error) {
     println!("\n{}", format_header(msg).cyan());
     println!("\n{}", textwrap::fill(&e.to_string(), 80));
     std::process::exit(1)
@@ -187,15 +183,15 @@ where
     }
 
     pub fn print(&self) {
-        for (k, v) in self.only_left.iter() {
+        for (k, v) in &self.only_left {
             println!("- {} {} {}", "[DEL]".yellow(), k, v);
         }
 
-        for (k, o, n) in self.changed.iter() {
+        for (k, o, n) in &self.changed {
             println!("- {} {} {} -> {}", "[CHG]".blue(), k, o, n);
         }
 
-        for (k, v) in self.only_right.iter() {
+        for (k, v) in &self.only_right {
             println!("- {} {} {}", "[ADD]".green(), k, v);
         }
     }

@@ -203,7 +203,7 @@ impl Package {
     pub fn all_dependencies(&self) -> Result<Vec<(Name, semver::Range)>, Error> {
         let mut all_deps: BTreeMap<Name, Range> = self.dependencies.clone();
 
-        for (k, v) in self.test_dependencies.iter() {
+        for (k, v) in &self.test_dependencies {
             if let Some(e) = all_deps.get(k) {
                 bail!(
                     "Dependency {}@{} duplicated in test-dependencies as {}",

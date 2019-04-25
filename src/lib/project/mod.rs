@@ -36,7 +36,7 @@ pub struct AppDependencies {
 
 pub fn reconstruct(
     direct_names: &[package::Name],
-    g: solver::Graph<solver::Summary<retriever::PackageId>>,
+    g: &solver::Graph<solver::Summary<retriever::PackageId>>,
 ) -> (AppDependencies, AppDependencies) {
     let mut direct = BTreeMap::new();
     let mut indirect = BTreeMap::new();
@@ -51,30 +51,26 @@ pub fn reconstruct(
         let item = g[idx].clone();
         visited.insert(idx.index());
 
-        match item.id {
-            retriever::PackageId::Root => continue,
-            retriever::PackageId::Elm => continue,
-            retriever::PackageId::Pkg(name) => {
-                if direct_names.contains(&name) {
-                    direct.insert(name, item.version);
-                    let mut dfs = petgraph::visit::Dfs::new(&g, idx);
-                    while let Some(nx) = dfs.next(&g) {
-                        if visited.contains(&nx.index()) {
+        if let retriever::PackageId::Pkg(name) = item.id {
+            if direct_names.contains(&name) {
+                direct.insert(name, item.version);
+                let mut dfs = petgraph::visit::Dfs::new(&g, idx);
+                while let Some(nx) = dfs.next(&g) {
+                    if visited.contains(&nx.index()) {
+                        continue;
+                    }
+                    visited.insert(nx.index());
+                    let item = g[nx].clone();
+
+                    if let retriever::PackageId::Pkg(dep) = item.id {
+                        if direct_names.contains(&dep) {
                             continue;
                         }
-                        visited.insert(nx.index());
-                        let item = g[nx].clone();
-
-                        if let retriever::PackageId::Pkg(dep) = item.id {
-                            if direct_names.contains(&dep) {
-                                continue;
-                            }
-                            indirect.insert(dep, item.version);
-                        }
+                        indirect.insert(dep, item.version);
                     }
-                } else {
-                    test_idxs.push(idx.index());
                 }
+            } else {
+                test_idxs.push(idx.index());
             }
         }
     }

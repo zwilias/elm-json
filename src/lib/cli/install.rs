@@ -24,7 +24,7 @@ pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
 }
 
 fn install_package(matches: &ArgMatches, logger: &Logger, info: &Package) -> Result<(), Error> {
-    let mut retriever = Retriever::new(&logger, info.elm_version().to_constraint())?;
+    let mut retriever = Retriever::new(&logger, &info.elm_version().to_constraint())?;
 
     let deps = info.all_dependencies()?;
     retriever.add_deps(&deps);
@@ -33,7 +33,7 @@ fn install_package(matches: &ArgMatches, logger: &Logger, info: &Package) -> Res
     let res = Resolver::new(&logger, &mut retriever)
         .solve()
         .unwrap_or_else(|e| {
-            util::error_out("NO VALID PACKAGE VERSIONS FOUND", e);
+            util::error_out("NO VALID PACKAGE VERSIONS FOUND", &e);
             unreachable!()
         });
 
@@ -99,7 +99,7 @@ fn install_application(
     let strictness = semver::Strictness::Exact;
     let elm_version = info.elm_version();
 
-    let mut retriever: Retriever = Retriever::new(&logger, elm_version.into())?;
+    let mut retriever: Retriever = Retriever::new(&logger, &elm_version.into())?;
 
     let extras = util::add_extra_deps(matches, &mut retriever)?;
 
@@ -142,7 +142,7 @@ fn install_application(
     let res = Resolver::new(&logger, &mut retriever)
         .solve()
         .unwrap_or_else(|e| {
-            util::error_out("NO VALID PACKAGE VERSIONS FOUND", e);
+            util::error_out("NO VALID PACKAGE VERSIONS FOUND", &e);
             unreachable!()
         });
 
@@ -161,7 +161,7 @@ fn install_application(
         .collect::<Vec<_>>();
     orig_direct.extend(extra_direct);
 
-    let deps = project::reconstruct(&orig_direct, res);
+    let deps = project::reconstruct(&orig_direct, &res);
 
     println!(
         "\n{}\n",

@@ -1,7 +1,4 @@
-use crate::{
-    package,
-    project::{Application, Package, Project},
-};
+use crate::project::{Application, Package, Project};
 use clap::ArgMatches;
 use colored::Colorize;
 use dialoguer;
@@ -28,7 +25,7 @@ pub fn run(matches: &ArgMatches, _logger: &Logger) -> Result<(), Error> {
 
 fn create_package(_matches: &ArgMatches) -> Result<(), Error> {
     let name = until_valid(
-        |x| x.parse::<package::Name>(),
+        str::parse,
         "Enter a name for your package: (format: author/project)",
     )?;
     let summary = until_valid(

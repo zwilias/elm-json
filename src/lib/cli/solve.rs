@@ -25,7 +25,7 @@ fn solve_application(
     let indirect = &info.indirect_dependencies();
     let elm_version = info.elm_version();
 
-    let mut retriever: Retriever = Retriever::new(&logger, elm_version.into())?;
+    let mut retriever: Retriever = Retriever::new(&logger, &elm_version.into())?;
     let extras = util::add_extra_deps(&matches, &mut retriever)?;
 
     retriever.add_preferred_versions(
@@ -70,7 +70,7 @@ fn solve_application(
         });
     match res {
         Ok(v) => println!("{}", v),
-        Err(e) => util::error_out("NO VALID PACKAGE VERSIONS FOUND", e),
+        Err(e) => util::error_out("NO VALID PACKAGE VERSIONS FOUND", &e),
     }
     Ok(())
 }
@@ -82,7 +82,7 @@ fn solve_package(matches: &ArgMatches, logger: &Logger, info: &Package) -> Resul
         info.dependencies()
     };
 
-    let mut retriever: Retriever = Retriever::new(&logger, info.elm_version().to_constraint())?;
+    let mut retriever = Retriever::new(&logger, &info.elm_version().to_constraint())?;
 
     if matches.is_present("minimize") {
         retriever.minimize();
@@ -105,7 +105,7 @@ fn solve_package(matches: &ArgMatches, logger: &Logger, info: &Package) -> Resul
         });
     match res {
         Ok(v) => println!("{}", v),
-        Err(e) => util::error_out("NO VALID PACKAGE VERSIONS FOUND", e),
+        Err(e) => util::error_out("NO VALID PACKAGE VERSIONS FOUND", &e),
     }
     Ok(())
 }

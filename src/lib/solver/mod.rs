@@ -383,9 +383,13 @@ where
         let mut unsatisfied = self
             .derivations
             .iter()
-            .filter(|(_, v)| v.0)
-            .map(|(k, v)| (k, &v.1))
-            .filter(|d| !self.decisions.contains_key(d.0))
+            .filter_map(|(k, v)| {
+                if v.0 && !self.decisions.contains_key(k) {
+                    Some((k, &v.1))
+                } else {
+                    None
+                }
+            })
             .collect::<Vec<_>>();
 
         if unsatisfied.is_empty() {

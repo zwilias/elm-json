@@ -57,7 +57,7 @@ where
     P: summary::PackageId,
 {
     pub fn new(deps: IndexMap<P, Constraint>, cause: IncompatibilityCause) -> Self {
-        Incompatibility { deps, cause }
+        Self { deps, cause }
     }
 
     pub fn from_dep(a: Summary<P>, b: (P, Constraint)) -> Self {
@@ -66,7 +66,7 @@ where
             b.0 => b.1,
         );
 
-        Incompatibility::new(m, IncompatibilityCause::Dependency)
+        Self::new(m, IncompatibilityCause::Dependency)
     }
 
     pub fn deps(&self) -> &IndexMap<P, Constraint> {

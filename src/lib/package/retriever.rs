@@ -62,7 +62,7 @@ impl From<package::Name> for PackageId {
 }
 
 impl Retriever {
-    pub fn new(logger: &Logger, elm_version: Constraint) -> Result<Self, Error> {
+    pub fn new(logger: &Logger, elm_version: &Constraint) -> Result<Self, Error> {
         let mut deps_cache = HashMap::new();
 
         deps_cache.insert(
@@ -117,7 +117,7 @@ impl Retriever {
 
     fn count_versions(versions_map: &HashMap<package::Name, Vec<Version>>) -> usize {
         let mut count = 0;
-        for (_, vs) in versions_map.iter() {
+        for vs in versions_map.values() {
             count += vs.len();
         }
         count
@@ -137,7 +137,7 @@ impl Retriever {
             );
             HashMap::new()
         });
-        for (pkg, vs) in remote_versions.iter() {
+        for (pkg, vs) in &remote_versions {
             let entry = versions.entry(pkg.clone()).or_insert_with(Vec::new);
             entry.extend(vs);
         }
@@ -213,7 +213,7 @@ impl Retriever {
         let versions: Vec<String> = resp.json()?;
         let mut res: HashMap<package::Name, Vec<Version>> = HashMap::new();
 
-        for entry in versions.iter() {
+        for entry in &versions {
             let parts: Vec<_> = entry.split('@').collect();
             match parts.as_slice() {
                 [p, v] => {

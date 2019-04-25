@@ -31,7 +31,7 @@ fn upgrade_application(
     };
     let elm_version = info.elm_version();
 
-    let mut retriever: Retriever = Retriever::new(&logger, elm_version.into())?;
+    let mut retriever: Retriever = Retriever::new(&logger, &elm_version.into())?;
 
     retriever.add_deps(&info.dependencies(&strictness));
     retriever.add_deps(&info.test_dependencies(&strictness));
@@ -39,12 +39,12 @@ fn upgrade_application(
     let res = Resolver::new(&logger, &mut retriever)
         .solve()
         .unwrap_or_else(|e| {
-            util::error_out("NO VALID PACKAGE VERSIONS FOUND", e);
+            util::error_out("NO VALID PACKAGE VERSIONS FOUND", &e);
             unreachable!()
         });
 
     let direct_deps: Vec<_> = info.dependencies.direct.keys().cloned().collect();
-    let deps = project::reconstruct(&direct_deps, res);
+    let deps = project::reconstruct(&direct_deps, &res);
 
     if deps.0 == info.dependencies {
         println!("\n{}\n", util::format_header("PACKAGES UP TO DATE").green());

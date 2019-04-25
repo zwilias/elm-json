@@ -50,7 +50,7 @@ use failure::{format_err, Error};
 use indexmap::{indexset, IndexSet};
 use itertools::Itertools;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use std::{cmp, fmt, str::FromStr};
+use std::{cmp, fmt, str::FromStr, string::ToString};
 
 pub enum Strictness {
     Exact,
@@ -94,7 +94,7 @@ impl FromStr for Version {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let parts: Vec<u64> = s
             .split('.')
-            .map(|x| x.parse::<u64>())
+            .map(str::parse)
             .collect::<Result<Vec<_>, _>>()
             .map_err(|e| format_err!("{}", e))?;
         match parts.as_slice() {
@@ -727,7 +727,7 @@ impl fmt::Debug for Constraint {
         write!(
             f,
             "Constraint({})",
-            self.set.iter().map(|r| r.to_string()).join(", ")
+            self.set.iter().map(ToString::to_string).join(", ")
         )
     }
 }
@@ -748,7 +748,7 @@ impl fmt::Display for Constraint {
                 "at versions other than {}",
                 Range::new(Interval::Closed(*l), Interval::Open(*u)).unwrap()
             ),
-            _ => write!(f, "{}", items.iter().map(|r| r.to_string()).join(", ")),
+            _ => write!(f, "{}", items.iter().map(ToString::to_string).join(", ")),
         }
     }
 }
