@@ -27,11 +27,12 @@ possible, to prevent downloading things you may already have on your filesystem.
       * [Upgrading dependencies: elm-json upgrade](#upgrading-dependencies-elm-json-upgrade)
          * [Example: Safely updating all dependencies](#example-safely-updating-all-dependencies)
          * [Example: Major version upgrades for your dependencies](#example-major-version-upgrades-for-your-dependencies)
-      * [Initializing applications/packages elm-json new](#initializing-applicationspackages-elm-json-new)
+      * [Initializing applications/packages: elm-json new](#initializing-applicationspackages-elm-json-new)
+      * [Deeply listing all dependencies: elm-json tree](#deeply-listing-all-dependencies-elm-json-tree)
       * [For tooling: elm-json solve](#for-tooling-elm-json-solve)
       * [Generating shell completions: elm-json completions](#generating-shell-completions-elm-json-completions)
 
-<!-- Added by: ilias, at: Mon Apr 22 17:31:50 CEST 2019 -->
+<!-- Added by: ilias, at: Fri Apr 26 18:12:37 CEST 2019 -->
 
 <!--te-->
 
@@ -212,7 +213,7 @@ If you want to upgrade a specific package to a specific version, try running
 `elm-json install author/project@version`, which will tell you what package(s)
 are preventing this from happening.
 
-## Initializing applications/packages `elm-json new`
+## Initializing applications/packages: `elm-json new`
 
 ```
 USAGE:
@@ -226,6 +227,56 @@ FLAGS:
 Create a new `elm.json` file, for applications or packages.
 
 This is very rudimentary right now.
+
+## Deeply listing all dependencies: `elm-json tree`
+
+```
+USAGE:
+    elm-json tree [FLAGS] [INPUT]
+
+FLAGS:
+    -h, --help       Prints help information
+        --test       Promote test-dependencies to top-level dependencies
+    -V, --version    Prints version information
+
+ARGS:
+    <INPUT>    The elm.json file to solve [default: elm.json]
+```
+
+Lists the entire dependency graph (with test-dependencies included when `--test`
+is passed) as a tree.
+
+Example output:
+
+```
+project
+├── elm/core @ 1.0.2
+├── elm/http @ 1.0.0
+│   ├── elm/core @ 1.0.2 *
+│   └── elm/json @ 1.1.3
+│       └── elm/core @ 1.0.2 *
+├── elm-community/json-extra @ 4.0.0
+│   ├── elm/core @ 1.0.2 *
+│   ├── elm/json @ 1.1.3 *
+│   ├── elm/time @ 1.0.0
+│   │   └── elm/core @ 1.0.2 *
+│   └── rtfeldman/elm-iso8601-date-strings @ 1.1.3
+│       ├── elm/core @ 1.0.2 *
+│       ├── elm/json @ 1.1.3 *
+│       ├── elm/parser @ 1.1.0
+│       │   └── elm/core @ 1.0.2 *
+│       └── elm/time @ 1.0.0 *
+└── lukewestby/elm-http-builder @ 6.0.0
+    ├── elm/core @ 1.0.2 *
+    ├── elm/http @ 1.0.0 *
+    ├── elm/json @ 1.1.3 *
+    ├── elm/time @ 1.0.0 *
+    └── elm/url @ 1.0.0
+        └── elm/core @ 1.0.2 *
+
+Items marked with * have their dependencies ommitted since they've already
+appeared in the output.
+```
 
 ## For tooling: `elm-json solve`
 

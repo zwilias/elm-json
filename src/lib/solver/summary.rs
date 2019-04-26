@@ -7,7 +7,7 @@ pub struct Summary<P: PackageId> {
     pub version: Version,
 }
 
-pub trait PackageId: Clone + PartialEq + std::hash::Hash + Eq + fmt::Display {
+pub trait PackageId: Clone + std::hash::Hash + Eq + fmt::Display + Ord {
     fn is_root(&self) -> bool;
 }
 

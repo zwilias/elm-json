@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 indexmap = "1"
-itertools = "0.7"
+itertools = "0.8"
 failure = "0.1"
 petgraph = "0.4"
 slog = { version = "2", features = ["max_level_trace", "release_max_level_debug"] }

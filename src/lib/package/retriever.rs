@@ -32,7 +32,7 @@ pub enum Mode {
     Maximize,
 }
 
-#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
 pub enum PackageId {
     Root,
     Elm,

@@ -4,6 +4,7 @@ pub mod completions;
 pub mod install;
 pub mod new;
 pub mod solve;
+pub mod tree;
 pub mod uninstall;
 pub mod upgrade;
 pub mod util;
@@ -85,6 +86,20 @@ pub fn build() -> App<'static, 'static> {
                     Arg::with_name("INPUT")
                         .help("The elm.json file to upgrade")
                         .last(true)
+                        .default_value("elm.json"),
+                ),
+        )
+        .subcommand(
+            SubCommand::with_name("tree")
+                .about("List entire dependency graph as a tree")
+                .arg(
+                    Arg::with_name("test")
+                        .help("Promote test-dependencies to top-level dependencies")
+                        .long("test"),
+                )
+                .arg(
+                    Arg::with_name("INPUT")
+                        .help("The elm.json file to solve")
                         .default_value("elm.json"),
                 ),
         )
