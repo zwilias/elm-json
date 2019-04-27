@@ -108,8 +108,7 @@ fn install_application(
             .indirect
             .iter()
             .filter(|&(k, _)| !extras.contains(&k.clone()))
-            .map(|(k, v)| (k.clone().into(), *v))
-            .collect(),
+            .map(|(k, v)| (k.clone().into(), *v)),
     );
 
     retriever.add_preferred_versions(
@@ -117,27 +116,20 @@ fn install_application(
             .indirect
             .iter()
             .filter(|&(k, _)| !extras.contains(&k.clone()))
-            .map(|(k, v)| (k.clone().into(), *v))
-            .collect(),
+            .map(|(k, v)| (k.clone().into(), *v)),
     );
 
-    let deps: Vec<_> = info
-        .dependencies(&strictness)
-        .iter()
-        .filter(|(k, _)| !extras.contains(k))
-        .map(|(k, v)| (k.clone(), v.clone()))
-        .collect();
+    retriever.add_deps(
+        info.dependencies(&strictness)
+            .iter()
+            .filter(|(k, _)| !extras.contains(k)),
+    );
 
-    retriever.add_deps(&deps);
-
-    let deps: Vec<_> = info
-        .test_dependencies(&strictness)
-        .iter()
-        .filter(|(k, _)| !extras.contains(k))
-        .map(|(k, v)| (k.clone(), v.clone()))
-        .collect();
-
-    retriever.add_deps(&deps);
+    retriever.add_deps(
+        info.test_dependencies(&strictness)
+            .iter()
+            .filter(|(k, _)| !extras.contains(k)),
+    );
 
     let res = Resolver::new(&logger, &mut retriever)
         .solve()

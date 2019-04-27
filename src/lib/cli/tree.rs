@@ -34,12 +34,7 @@ fn tree_application(
 
     let mut retriever: Retriever = Retriever::new(&logger, &elm_version.into())?;
 
-    retriever.add_preferred_versions(
-        indirect
-            .iter()
-            .map(|(k, v)| (k.clone().into(), *v))
-            .collect(),
-    );
+    retriever.add_preferred_versions(indirect.iter().map(|(k, v)| (k.clone().into(), *v)));
 
     if matches.is_present("test") {
         deps.extend(info.test_dependencies(&semver::Strictness::Exact));
@@ -47,8 +42,7 @@ fn tree_application(
         retriever.add_preferred_versions(
             info.indirect_test_dependencies()
                 .into_iter()
-                .map(|(k, v)| (k.into(), v))
-                .collect(),
+                .map(|(k, v)| (k.into(), v)),
         )
     }
 

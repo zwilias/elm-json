@@ -32,36 +32,25 @@ fn solve_application(
         indirect
             .iter()
             .filter(|&(k, _)| !extras.contains(&k.clone()))
-            .map(|(k, v)| (k.clone().into(), *v))
-            .collect(),
+            .map(|(k, v)| (k.clone().into(), *v)),
     );
 
-    let mut deps: Vec<_> = deps
-        .iter()
-        .filter(|(k, _)| !extras.contains(k))
-        .map(|(k, v)| (k.clone(), v.clone()))
-        .collect();
+    retriever.add_deps(deps.iter().filter(|(k, _)| !extras.contains(k)));
 
     if matches.is_present("test") {
-        let test_deps = &info.test_dependencies(&semver::Strictness::Exact);
-        let test_deps: Vec<_> = test_deps
-            .iter()
-            .filter(|(k, _)| !extras.contains(k))
-            .map(|(k, v)| (k.clone(), v.clone()))
-            .collect();
-
-        deps.extend(test_deps);
+        retriever.add_deps(
+            info.test_dependencies(&semver::Strictness::Exact)
+                .iter()
+                .filter(|(k, _)| !extras.contains(k)),
+        );
 
         retriever.add_preferred_versions(
             info.indirect_test_dependencies()
                 .iter()
                 .filter(|&(k, _)| !extras.contains(&k.clone()))
-                .map(|(k, v)| (k.clone().into(), *v))
-                .collect(),
+                .map(|(k, v)| (k.clone().into(), *v)),
         )
     }
-
-    retriever.add_deps(&deps);
 
     let res = Resolver::new(&logger, &mut retriever)
         .solve()
@@ -90,13 +79,7 @@ fn solve_package(matches: &ArgMatches, logger: &Logger, info: &Package) -> Resul
 
     let extras = util::add_extra_deps(&matches, &mut retriever)?;
 
-    let deps: Vec<_> = deps
-        .iter()
-        .filter(|(k, _)| !extras.contains(k))
-        .map(|(k, v)| (k.clone(), v.clone()))
-        .collect();
-
-    retriever.add_deps(&deps);
+    retriever.add_deps(deps.iter().filter(|(k, _)| !extras.contains(k)));
 
     let res = Resolver::new(&logger, &mut retriever)
         .solve()

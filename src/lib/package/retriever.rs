@@ -93,16 +93,15 @@ impl Retriever {
         self.mode = Mode::Minimize;
     }
 
-    pub fn add_deps(&mut self, deps: &[(package::Name, Range)]) {
-        let deps: Vec<Incompatibility<_>> = deps
-            .iter()
-            .map(|(name, range)| {
-                let constraint = Constraint::from(range.clone()).complement();
-                Incompatibility::from_dep(Self::root(), (name.clone().into(), constraint))
-            })
-            .collect();
+    pub fn add_deps<'a, I>(&mut self, deps: I)
+    where
+        I: IntoIterator<Item = &'a (package::Name, Range)>,
+    {
         let entry = self.deps_cache.entry(Self::root()).or_insert_with(Vec::new);
-        entry.extend(deps);
+        entry.extend(deps.into_iter().map(|(name, range)| {
+            let constraint = Constraint::from(range.clone()).complement();
+            Incompatibility::from_dep(Self::root(), (name.clone().into(), constraint))
+        }));
     }
 
     pub fn add_dep(&mut self, name: package::Name, version: &Option<Version>) {
@@ -229,7 +228,11 @@ impl Retriever {
         Ok(res)
     }
 
-    pub fn add_preferred_versions(&mut self, versions: HashMap<PackageId, Version>) {
+    // pub fn add_preferred_versions(&mut self, versions: HashMap<PackageId, Version>) {
+    pub fn add_preferred_versions<T>(&mut self, versions: T)
+    where
+        T: IntoIterator<Item = (PackageId, Version)>,
+    {
         self.preferred_versions.extend(versions);
     }
 
