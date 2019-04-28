@@ -1,11 +1,7 @@
 use crate::{
-    package::{
-        self,
-        retriever::{PackageId, Retriever},
-    },
+    package::{self, retriever::Retriever},
     project::{Application, Package, Project},
-    semver::{self, Version},
-    solver,
+    semver,
 };
 use clap::ArgMatches;
 use colored::Colorize;
@@ -58,25 +54,6 @@ pub fn write_elm_json(project: &Project, matches: &ArgMatches) -> Result<(), Err
     Ok(())
 }
 
-pub fn find_by_name(
-    name: &package::Name,
-    g: &solver::Graph<solver::Summary<PackageId>>,
-) -> Option<Version> {
-    for idx in g.node_indices() {
-        let item = g[idx].clone();
-        match item.id {
-            PackageId::Pkg(n) => {
-                if &n == name {
-                    return Some(g[idx].version);
-                }
-                continue;
-            }
-            _ => continue,
-        }
-    }
-    None
-}
-
 pub fn add_extra_deps(
     matches: &ArgMatches,
     retriever: &mut Retriever,
@@ -111,12 +88,6 @@ pub fn error_out(msg: &str, e: &Error) {
 
 pub fn format_header(x: &str) -> String {
     format!("-- {} {}", x, "-".repeat(80 - 4 - x.len()))
-}
-
-pub fn unsupported(description: &str) -> Result<(), Error> {
-    println!("\n{}\n", format_header("COMMAND NOT YET IMPLEMENTED").red());
-    println!("{}", textwrap::fill(description, 80));
-    std::process::exit(1)
 }
 
 pub fn show_diff<K, T>(title: &str, left: &BTreeMap<K, T>, right: &BTreeMap<K, T>)

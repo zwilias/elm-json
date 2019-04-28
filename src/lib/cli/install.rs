@@ -44,7 +44,7 @@ fn install_package(matches: &ArgMatches, logger: &Logger, info: &Package) -> Res
         let item = res[idx].clone();
         if let PackageId::Pkg(dep) = item.id {
             if extras.contains(&dep) {
-                let r: package::Range = util::find_by_name(&dep, &res).unwrap().into();
+                let r: package::Range = item.version.into();
                 if for_test {
                     test_deps.insert(dep.clone(), r);
                 } else {

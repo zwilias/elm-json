@@ -8,12 +8,17 @@ use crate::{
 use clap::ArgMatches;
 use colored::Colorize;
 use dialoguer::Confirmation;
-use failure::Error;
+use failure::{format_err, Error};
 use slog::Logger;
 
 pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
     util::with_elm_json(&matches, &logger, upgrade_application, |_, _, _| {
-        util::unsupported("Upgrading dependencies for packages is not yet supported.")
+        util::error_out(
+            "COMMAND_NOT_YET_IMPLEMENTED",
+            &format_err!("Upgrading package dependencies is not yet supported!"),
+        );
+
+        unreachable!()
     })
 }
 fn upgrade_application(
