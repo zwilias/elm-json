@@ -107,12 +107,12 @@ where
     }
 }
 
-impl<K, T> Diff<K, T>
+impl<'a, K, T> Diff<'a, K, T>
 where
     T: Sized + Eq + Copy + std::fmt::Display,
     K: std::fmt::Display + Ord + Clone,
 {
-    pub fn new(left: &BTreeMap<K, T>, right: &BTreeMap<K, T>) -> Self {
+    pub fn new(left: &'a BTreeMap<K, T>, right: &'a BTreeMap<K, T>) -> Self {
         let mut only_left = Vec::new();
         let mut only_right = Vec::new();
         let mut changed = Vec::new();
@@ -128,7 +128,7 @@ where
         {
             if left_name == right_name {
                 if left_version != right_version {
-                    changed.push((left_name.clone(), *left_version, *right_version))
+                    changed.push((left_name, left_version, right_version))
                 }
 
                 left = iter_left.next();
@@ -137,25 +137,25 @@ where
             }
 
             if left_name < right_name {
-                only_left.push((left_name.clone(), *left_version));
+                only_left.push((left_name, left_version));
                 left = iter_left.next();
                 continue;
             }
 
             if left_name > right_name {
-                only_right.push((right_name.clone(), *right_version));
+                only_right.push((right_name, right_version));
                 right = iter_right.next();
                 continue;
             }
         }
 
         while let Some((name, version)) = left {
-            only_left.push((name.clone(), *version));
+            only_left.push((name, version));
             left = iter_left.next();
         }
 
         while let Some((name, version)) = right {
-            only_right.push((name.clone(), *version));
+            only_right.push((name, version));
             right = iter_right.next();
         }
 
@@ -185,12 +185,12 @@ where
     }
 }
 
-pub struct Diff<K, T>
+pub struct Diff<'a, K, T>
 where
     K: Ord + std::fmt::Display + Clone,
     T: Eq + Sized + Copy + std::fmt::Display,
 {
-    only_left: Vec<(K, T)>,
-    only_right: Vec<(K, T)>,
-    changed: Vec<(K, T, T)>,
+    only_left: Vec<(&'a K, &'a T)>,
+    only_right: Vec<(&'a K, &'a T)>,
+    changed: Vec<(&'a K, &'a T, &'a T)>,
 }
