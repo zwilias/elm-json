@@ -1,4 +1,8 @@
 #![warn(unused_extern_crates)]
+use std::alloc::System;
+
+#[global_allocator]
+static A: System = System;
 
 use colored::Colorize;
 use elm_json::cli;

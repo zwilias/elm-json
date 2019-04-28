@@ -279,7 +279,7 @@ where
                         }
                     };
 
-                    if let Some((pkg, diff)) = difference.clone() {
+                    if let Some((pkg, diff)) = &difference {
                         previous_satisfier_level = cmp::max(
                             previous_satisfier_level,
                             self.satisfier(pkg, &diff.complement()).unwrap().level(),
@@ -327,10 +327,11 @@ where
                 new_terms,
                 IncompatibilityCause::Derived(inc, most_recent_satisfier.cause().unwrap()),
             );
-            // What Pub does is just add the current incompatibility directly as a cause of the new
-            // incompatibility. Unfortunately, we don't want to be copying *that* much, so instead
-            // we just add the incompatibility to the global cache. I'm not entirely sure if this
-            // is totally correct, but oh well.
+            // What Pub does is just add the current incompatibility directly as
+            // a cause of the new incompatibility. Unfortunately, we don't want
+            // to be copying *that* much, so instead we just add the
+            // incompatibility to the global cache. I'm not entirely sure if
+            // this is totally correct, but oh well.
             inc = self.incompats.len();
             self.incompats.push(new_i);
             new_incompatibility = true;
@@ -397,8 +398,8 @@ where
         } else {
             // We want to find the unsatisfied package with the fewest available versions.
             unsatisfied.sort_by(|a, b| {
-                // Reversing the comparison will put the items with the least versions at the end,
-                // which is more efficient for popping
+                // Reversing the comparison will put the items with the least
+                // versions at the end, which is more efficient for popping
                 self.retriever
                     .count_versions(a.0)
                     .cmp(&self.retriever.count_versions(b.0))

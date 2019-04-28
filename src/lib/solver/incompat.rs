@@ -39,7 +39,7 @@ pub enum IncompatibilityCause {
 #[derive(Clone, PartialEq, Eq)]
 pub struct Incompatibility<P>
 where
-    P: std::hash::Hash + PartialEq + Clone + Eq + fmt::Display,
+    P: summary::PackageId,
 {
     pub deps: IndexMap<P, Constraint>,
     pub cause: IncompatibilityCause,
