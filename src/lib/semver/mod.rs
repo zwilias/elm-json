@@ -173,7 +173,6 @@ impl Interval {
             (Interval::Closed(a), Interval::Open(b)) => {
                 if a == b {
                     if lower {
-                        // The pre_ok doesn't matter, cause >! == >
                         cmp::Ordering::Less
                     } else {
                         cmp::Ordering::Greater
@@ -485,17 +484,7 @@ impl Constraint {
 
     /// Checks if a `Version` is satisfied by this `Constraint`.
     pub fn satisfies(&self, v: &Version) -> bool {
-        if self.set.is_empty() {
-            return false;
-        }
-
-        for s in &self.set {
-            if s.satisfies(v) {
-                return true;
-            }
-        }
-
-        false
+        self.set.iter().any(|s| s.satisfies(v))
     }
 
     pub fn intersection(&self, other: &Constraint) -> Constraint {
@@ -678,15 +667,12 @@ impl Constraint {
     }
 
     pub fn complement(&self) -> Constraint {
-        let any: Constraint = Range::new(Interval::Unbounded, Interval::Unbounded)
-            .unwrap()
-            .into();
-        any.difference(self)
+        Constraint::any().difference(self)
     }
 
     pub fn relation(&self, other: &Constraint) -> Relation {
         let i = &self.intersection(other);
-        if i == other && i == self {
+        if self == other {
             Relation::Equal
         } else if i == other {
             Relation::Superset
