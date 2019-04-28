@@ -147,7 +147,7 @@ where
     // TODO: Actually special-case stuff to look nicer.
     pub fn show_combine(
         &self,
-        other: &Incompatibility<P>,
+        other: &Self,
         self_linum: Option<u16>,
         other_linum: Option<u16>,
     ) -> String {
@@ -172,11 +172,7 @@ where
         buf
     }
 
-    fn show_combine_same(
-        &self,
-        other: &Incompatibility<P>,
-        self_linum: Option<u16>,
-    ) -> Option<String> {
+    fn show_combine_same(&self, other: &Self, self_linum: Option<u16>) -> Option<String> {
         if self == other {
             let mut buf = self.show();
             if let Some(l) = self_linum {

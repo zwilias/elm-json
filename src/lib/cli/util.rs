@@ -112,7 +112,7 @@ where
     T: Sized + Eq + Copy + std::fmt::Display,
     K: std::fmt::Display + Ord + Clone,
 {
-    pub fn new(left: &BTreeMap<K, T>, right: &BTreeMap<K, T>) -> Diff<K, T> {
+    pub fn new(left: &BTreeMap<K, T>, right: &BTreeMap<K, T>) -> Self {
         let mut only_left = Vec::new();
         let mut only_right = Vec::new();
         let mut changed = Vec::new();
@@ -159,7 +159,7 @@ where
             right = iter_right.next();
         }
 
-        Diff {
+        Self {
             only_left,
             only_right,
             changed,

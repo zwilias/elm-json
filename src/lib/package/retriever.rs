@@ -76,7 +76,7 @@ impl Retriever {
         let logger = logger.new(o!("phase" => "retrieve"));
         let client = reqwest::Client::new();
 
-        let mut retriever = Retriever {
+        let mut retriever = Self {
             deps_cache,
             versions: HashMap::new(),
             preferred_versions: HashMap::new(),

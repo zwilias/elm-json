@@ -256,7 +256,7 @@ impl str::FromStr for Range {
             [lower, "<=", "v", "<", upper] => {
                 let lower: Version = lower.to_string().parse()?;
                 let upper: Version = upper.to_string().parse()?;
-                Ok(Range { lower, upper })
+                Ok(Self { lower, upper })
             }
             _ => Err(format_err!("Invalid range: {}", s)),
         }

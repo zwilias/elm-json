@@ -32,7 +32,7 @@ pub struct Assignment<PackageId> {
 
 impl<PackageId> Assignment<PackageId> {
     pub fn new(step: u16, level: u16, pkg: PackageId, ty: AssignmentType) -> Self {
-        Assignment {
+        Self {
             step,
             level,
             ty,

@@ -98,7 +98,7 @@ impl FromStr for Version {
             .collect::<Result<Vec<_>, _>>()
             .map_err(|e| format_err!("{}", e))?;
         match parts.as_slice() {
-            [major, minor, patch] => Ok(Version {
+            [major, minor, patch] => Ok(Self {
                 major: *major,
                 minor: *minor,
                 patch: *patch,
@@ -140,7 +140,7 @@ pub enum Interval {
 impl Interval {
     /// Compares two `Interval`s and returns an ordering. Unfortunately we can't use the Ord trait
     /// beacuse of the extra parameter `lower`.
-    pub fn cmp(&self, other: &Interval, lower: bool) -> cmp::Ordering {
+    pub fn cmp(&self, other: &Self, lower: bool) -> cmp::Ordering {
         match (self, other) {
             (Interval::Unbounded, Interval::Unbounded) => cmp::Ordering::Equal,
             (Interval::Unbounded, _) => {
@@ -157,8 +157,9 @@ impl Interval {
                     cmp::Ordering::Less
                 }
             }
-            (Interval::Open(a), Interval::Open(b)) => a.cmp(&b),
-            (Interval::Closed(a), Interval::Closed(b)) => a.cmp(&b),
+            (Interval::Open(a), Interval::Open(b)) | (Interval::Closed(a), Interval::Closed(b)) => {
+                a.cmp(&b)
+            }
             (Interval::Open(a), Interval::Closed(b)) => {
                 if a == b {
                     if lower {
@@ -184,7 +185,7 @@ impl Interval {
         }
     }
 
-    pub fn min<'a>(&'a self, other: &'a Interval, lower: bool) -> &'a Interval {
+    pub fn min<'a>(&'a self, other: &'a Self, lower: bool) -> &'a Self {
         if self.cmp(other, lower) == cmp::Ordering::Greater {
             other
         } else {
@@ -192,7 +193,7 @@ impl Interval {
         }
     }
 
-    pub fn max<'a>(&'a self, other: &'a Interval, lower: bool) -> &'a Interval {
+    pub fn max<'a>(&'a self, other: &'a Self, lower: bool) -> &'a Self {
         if self.cmp(other, lower) == cmp::Ordering::Less {
             other
         } else {
@@ -200,7 +201,7 @@ impl Interval {
         }
     }
 
-    pub fn flip(self) -> Interval {
+    pub fn flip(self) -> Self {
         match self {
             Interval::Closed(v) => Interval::Open(v),
             Interval::Open(v) => Interval::Closed(v),
@@ -249,13 +250,13 @@ impl Range {
     ///
     /// All `Range`s have to be valid, potentially true constraints. If a nonsensical range is
     /// suggested, `None` is returned.
-    pub fn new(lower: Interval, upper: Interval) -> Option<Range> {
+    pub fn new(lower: Interval, upper: Interval) -> Option<Self> {
         match (lower, upper) {
-            (Interval::Unbounded, b) => Some(Range {
+            (Interval::Unbounded, b) => Some(Self {
                 lower: Interval::Unbounded,
                 upper: b,
             }),
-            (a, Interval::Unbounded) => Some(Range {
+            (a, Interval::Unbounded) => Some(Self {
                 lower: a,
                 upper: Interval::Unbounded,
             }),
@@ -265,7 +266,7 @@ impl Range {
                 } else {
                     let (a, b) = (Interval::Open(a), Interval::Closed(b));
                     if a.cmp(&b, true) != cmp::Ordering::Greater {
-                        Some(Range { lower: a, upper: b })
+                        Some(Self { lower: a, upper: b })
                     } else {
                         None
                     }
@@ -277,7 +278,7 @@ impl Range {
                 } else {
                     let (a, b) = (Interval::Closed(a), Interval::Open(b));
                     if a.cmp(&b, true) != cmp::Ordering::Greater {
-                        Some(Range { lower: a, upper: b })
+                        Some(Self { lower: a, upper: b })
                     } else {
                         None
                     }
@@ -289,7 +290,7 @@ impl Range {
                 } else {
                     let (a, b) = (Interval::Open(a), Interval::Open(b));
                     if a.cmp(&b, true) != cmp::Ordering::Greater {
-                        Some(Range { lower: a, upper: b })
+                        Some(Self { lower: a, upper: b })
                     } else {
                         None
                     }
@@ -297,7 +298,7 @@ impl Range {
             }
             (a, b) => {
                 if a.cmp(&b, true) != cmp::Ordering::Greater {
-                    Some(Range { lower: a, upper: b })
+                    Some(Self { lower: a, upper: b })
                 } else {
                     None
                 }
@@ -305,11 +306,11 @@ impl Range {
         }
     }
 
-    pub fn any() -> Range {
+    pub fn any() -> Self {
         let lower = Interval::Unbounded;
         let upper = Interval::Unbounded;
 
-        Range { lower, upper }
+        Self { lower, upper }
     }
 
     pub fn upper(&self) -> &Interval {
@@ -349,14 +350,14 @@ impl Range {
     ///
     /// This function is a method of Range since we will never generate multiple disjoint `Range`s
     /// from an intersection operation.
-    fn intersection(&self, other: &Range) -> Option<Range> {
+    fn intersection(&self, other: &Self) -> Option<Self> {
         let lower = self.lower.max(&other.lower, true);
         let upper = self.upper.min(&other.upper, false);
 
-        Range::new(lower.clone(), upper.clone())
+        Self::new(lower.clone(), upper.clone())
     }
 
-    pub fn from(v: &Version, strictness: &Strictness) -> Range {
+    pub fn from(v: &Version, strictness: &Strictness) -> Self {
         let lower = Interval::Closed(*v);
         let upper = match strictness {
             Strictness::Exact => Interval::Closed(*v),
@@ -364,15 +365,15 @@ impl Range {
             Strictness::Unsafe => Interval::Unbounded,
         };
 
-        Range { lower, upper }
+        Self { lower, upper }
     }
 }
 
 impl From<Version> for Range {
-    fn from(v: Version) -> Range {
+    fn from(v: Version) -> Self {
         let lower = Interval::Closed(v);
         let upper = Interval::Closed(v);
-        Range { lower, upper }
+        Self { lower, upper }
     }
 }
 
@@ -404,17 +405,17 @@ pub struct Constraint {
 
 impl Constraint {
     /// Creates a new `Constraint` from a set of `Range`s.
-    pub fn new(ranges: IndexSet<Range>) -> Constraint {
-        let mut c = Constraint { set: ranges };
+    pub fn new(ranges: IndexSet<Range>) -> Self {
+        let mut c = Self { set: ranges };
         c.unify();
         c
     }
 
-    pub fn empty() -> Constraint {
-        Constraint { set: indexset!() }
+    pub fn empty() -> Self {
+        Self { set: indexset!() }
     }
 
-    pub fn any() -> Constraint {
+    pub fn any() -> Self {
         Range::any().into()
     }
 
@@ -487,7 +488,7 @@ impl Constraint {
         self.set.iter().any(|s| s.satisfies(v))
     }
 
-    pub fn intersection(&self, other: &Constraint) -> Constraint {
+    pub fn intersection(&self, other: &Self) -> Self {
         let mut set = IndexSet::new();
 
         for r in &self.set {
@@ -500,17 +501,17 @@ impl Constraint {
 
         // We skip unification because we already know that the set will be unified.
         // The only time we might not be unified is during creation or arbitrary insertion.
-        Constraint { set }
+        Self { set }
     }
 
-    pub fn union(&self, other: &Constraint) -> Constraint {
+    pub fn union(&self, other: &Self) -> Self {
         let mut set = self.set.clone();
         set.extend(other.set.clone());
 
-        Constraint { set }
+        Self { set }
     }
 
-    pub fn difference(&self, other: &Constraint) -> Constraint {
+    pub fn difference(&self, other: &Self) -> Self {
         let mut set = IndexSet::new();
 
         for r in &self.set {
@@ -663,14 +664,14 @@ impl Constraint {
             }
         }
 
-        Constraint { set }
+        Self { set }
     }
 
-    pub fn complement(&self) -> Constraint {
-        Constraint::any().difference(self)
+    pub fn complement(&self) -> Self {
+        Self::any().difference(self)
     }
 
-    pub fn relation(&self, other: &Constraint) -> Relation {
+    pub fn relation(&self, other: &Self) -> Relation {
         let i = &self.intersection(other);
         if self == other {
             Relation::Equal
@@ -688,21 +689,21 @@ impl Constraint {
 
 impl Default for Constraint {
     fn default() -> Self {
-        Constraint::any()
+        Self::any()
     }
 }
 
 impl From<Range> for Constraint {
-    fn from(r: Range) -> Constraint {
+    fn from(r: Range) -> Self {
         let mut set = IndexSet::new();
         set.insert(r);
 
-        Constraint { set }
+        Self { set }
     }
 }
 
 impl From<Version> for Constraint {
-    fn from(v: Version) -> Constraint {
+    fn from(v: Version) -> Self {
         let r: Range = v.into();
         r.into()
     }
