@@ -12,12 +12,9 @@ use failure::Error;
 use slog::Logger;
 
 pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
-    match util::read_elm_json(&matches)? {
-        Project::Application(app) => upgrade_application(&matches, &logger, &app),
-        Project::Package(_pkg) => {
-            util::unsupported("Upgrading dependencies for packages is not yet supported.")
-        }
-    }
+    util::with_elm_json(&matches, &logger, upgrade_application, |_, _, _| {
+        util::unsupported("Upgrading dependencies for packages is not yet supported.")
+    })
 }
 fn upgrade_application(
     matches: &ArgMatches,

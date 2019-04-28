@@ -13,10 +13,7 @@ use slog::Logger;
 use std::collections::{BTreeMap, HashSet};
 
 pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
-    match util::read_elm_json(&matches)? {
-        Project::Application(app) => uninstall_application(&matches, &logger, &app),
-        Project::Package(pkg) => uninstall_package(&matches, &logger, &pkg),
-    }
+    util::with_elm_json(&matches, &logger, uninstall_application, uninstall_package)
 }
 
 fn uninstall_application(

@@ -17,10 +17,7 @@ use slog::Logger;
 use std::collections::BTreeMap;
 
 pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
-    match util::read_elm_json(&matches)? {
-        Project::Application(app) => install_application(&matches, &logger, &app),
-        Project::Package(pkg) => install_package(&matches, &logger, &pkg),
-    }
+    util::with_elm_json(&matches, &logger, install_application, install_package)
 }
 
 fn install_package(matches: &ArgMatches, logger: &Logger, info: &Package) -> Result<(), Error> {

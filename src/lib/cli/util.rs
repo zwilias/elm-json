@@ -3,7 +3,7 @@ use crate::{
         self,
         retriever::{PackageId, Retriever},
     },
-    project::Project,
+    project::{Application, Package, Project},
     semver::{self, Version},
     solver,
 };
@@ -11,13 +11,30 @@ use clap::ArgMatches;
 use colored::Colorize;
 use failure::{format_err, Error};
 use serde::ser::Serialize;
+use slog::Logger;
 use std::{
     collections::{BTreeMap, HashSet},
     fs::File,
     io::{BufReader, BufWriter},
 };
 
-pub fn read_elm_json(matches: &ArgMatches) -> Result<Project, Error> {
+pub fn with_elm_json<A, P>(
+    matches: &ArgMatches,
+    logger: &Logger,
+    run_app: A,
+    run_pkg: P,
+) -> Result<(), Error>
+where
+    A: FnOnce(&ArgMatches, &Logger, &Application) -> Result<(), Error>,
+    P: FnOnce(&ArgMatches, &Logger, &Package) -> Result<(), Error>,
+{
+    match self::read_elm_json(&matches)? {
+        Project::Application(app) => run_app(&matches, &logger, &app),
+        Project::Package(pkg) => run_pkg(&matches, &logger, &pkg),
+    }
+}
+
+fn read_elm_json(matches: &ArgMatches) -> Result<Project, Error> {
     let path = matches.value_of("INPUT").unwrap();
     let file = File::open(path)
         .map_err(|_| format_err!("I could not read an elm.json file from {}!", path))?;

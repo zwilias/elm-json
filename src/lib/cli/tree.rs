@@ -1,10 +1,7 @@
 use super::util;
 use crate::{
-    package::{
-        retriever::{self, Retriever},
-        Package,
-    },
-    project::{Application, Project},
+    package::retriever::{self, Retriever},
+    project::{Application, Package},
     semver,
     solver::{self, Resolver},
 };
@@ -17,10 +14,7 @@ use slog::Logger;
 use std::collections::HashSet;
 
 pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
-    match util::read_elm_json(&matches)? {
-        Project::Application(app) => tree_application(&matches, &logger, &app),
-        Project::Package(pkg) => tree_package(&matches, &logger, &pkg),
-    }
+    util::with_elm_json(&matches, &logger, tree_application, tree_package)
 }
 
 fn tree_application(

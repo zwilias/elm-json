@@ -1,7 +1,7 @@
 use super::util;
 use crate::{
     package::{retriever::Retriever, Package},
-    project::{AppDependencies, Application, Project},
+    project::{AppDependencies, Application},
     semver,
     solver::Resolver,
 };
@@ -10,10 +10,7 @@ use failure::{format_err, Error};
 use slog::Logger;
 
 pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
-    match util::read_elm_json(&matches)? {
-        Project::Application(app) => solve_application(&matches, &logger, &app),
-        Project::Package(pkg) => solve_package(&matches, &logger, &pkg),
-    }
+    util::with_elm_json(&matches, &logger, solve_application, solve_package)
 }
 
 fn solve_application(
