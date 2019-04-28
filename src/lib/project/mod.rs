@@ -183,14 +183,6 @@ impl Application {
             .collect()
     }
 
-    pub fn indirect_dependencies(&self) -> BTreeMap<package::Name, Version> {
-        self.dependencies.indirect.clone()
-    }
-
-    pub fn indirect_test_dependencies(&self) -> BTreeMap<package::Name, Version> {
-        self.test_dependencies.indirect.clone()
-    }
-
     pub fn elm_version(&self) -> Version {
         self.elm_version
     }

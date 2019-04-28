@@ -29,20 +29,25 @@ fn tree_application(
     info: &Application,
 ) -> Result<(), Error> {
     let mut deps: Vec<_> = info.dependencies(&semver::Strictness::Exact);
-    let indirect = &info.indirect_dependencies();
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever = Retriever::new(&logger, &elm_version.into())?;
 
-    retriever.add_preferred_versions(indirect.iter().map(|(k, v)| (k.clone().into(), *v)));
+    retriever.add_preferred_versions(
+        info.dependencies
+            .indirect
+            .iter()
+            .map(|(k, v)| (k.clone().into(), *v)),
+    );
 
     if matches.is_present("test") {
         deps.extend(info.test_dependencies(&semver::Strictness::Exact));
 
         retriever.add_preferred_versions(
-            info.indirect_test_dependencies()
-                .into_iter()
-                .map(|(k, v)| (k.into(), v)),
+            info.test_dependencies
+                .indirect
+                .iter()
+                .map(|(k, v)| (k.clone().into(), *v)),
         )
     }
 

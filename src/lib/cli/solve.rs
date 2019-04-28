@@ -22,14 +22,14 @@ fn solve_application(
     info: &Application,
 ) -> Result<(), Error> {
     let deps = &info.dependencies(&semver::Strictness::Exact);
-    let indirect = &info.indirect_dependencies();
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever = Retriever::new(&logger, &elm_version.into())?;
     let extras = util::add_extra_deps(&matches, &mut retriever)?;
 
     retriever.add_preferred_versions(
-        indirect
+        info.dependencies
+            .indirect
             .iter()
             .filter(|&(k, _)| !extras.contains(&k.clone()))
             .map(|(k, v)| (k.clone().into(), *v)),
@@ -45,7 +45,8 @@ fn solve_application(
         );
 
         retriever.add_preferred_versions(
-            info.indirect_test_dependencies()
+            info.test_dependencies
+                .indirect
                 .iter()
                 .filter(|&(k, _)| !extras.contains(&k.clone()))
                 .map(|(k, v)| (k.clone().into(), *v)),
