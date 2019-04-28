@@ -4,9 +4,9 @@ use crate::{
     solver::{incompat::Incompatibility, retriever, summary},
 };
 use bincode;
+use chttp;
 use failure::{bail, format_err, Error};
 use fs2::FileExt;
-use reqwest;
 use slog::{debug, o, warn, Logger};
 use std::{
     collections::HashMap,
@@ -21,7 +21,6 @@ pub struct Retriever {
     versions: HashMap<PackageId, Vec<Version>>,
     preferred_versions: HashMap<PackageId, Version>,
     logger: Logger,
-    client: reqwest::Client,
     mode: Mode,
 }
 
@@ -74,14 +73,12 @@ impl Retriever {
         );
 
         let logger = logger.new(o!("phase" => "retrieve"));
-        let client = reqwest::Client::new();
 
         let mut retriever = Self {
             deps_cache,
             versions: HashMap::new(),
             preferred_versions: HashMap::new(),
             logger,
-            client,
             mode: Mode::Maximize,
         };
 
@@ -207,9 +204,9 @@ impl Retriever {
     ) -> Result<HashMap<package::Name, Vec<Version>>, Error> {
         debug!(self.logger, "Fetching versions since {}", from);
         let url = format!("https://package.elm-lang.org/all-packages/since/{}", from);
-        let mut resp = self.client.get(&url).send()?;
+        let response = chttp::get(url)?;
 
-        let versions: Vec<String> = resp.json()?;
+        let versions: Vec<String> = serde_json::from_reader(response.into_body())?;
         let mut res: HashMap<package::Name, Vec<Version>> = HashMap::new();
 
         for entry in &versions {
@@ -245,8 +242,8 @@ impl Retriever {
             "https://package.elm-lang.org/packages/{}/{}/elm.json",
             pkg.id, pkg.version
         );
-        let mut resp = self.client.get(&url).send()?;
-        let info: package::Package = resp.json()?;
+        let response = chttp::get(url)?;
+        let info: package::Package = serde_json::from_reader(response.into_body())?;
         Ok(self.deps_from_package(&pkg, &info))
     }
 
