@@ -1,5 +1,6 @@
 use super::util;
 use crate::{
+    diff,
     package::{self, retriever::Retriever},
     project::{self, Application, Package, Project},
     semver,
@@ -84,15 +85,23 @@ fn uninstall_application(
         util::format_header("PACKAGE CHANGES READY").green()
     );
 
-    util::show_diff("direct", &info.dependencies.direct, &deps.0.direct);
-    util::show_diff("indirect", &info.dependencies.indirect, &deps.0.indirect);
-    util::show_diff(
-        "direct test",
+    diff::show(
+        diff::Kind::Direct,
+        &info.dependencies.direct,
+        &deps.0.direct,
+    );
+    diff::show(
+        diff::Kind::Indirect,
+        &info.dependencies.indirect,
+        &deps.0.indirect,
+    );
+    diff::show(
+        diff::Kind::DirectTest,
         &info.test_dependencies.direct,
         &deps.1.direct,
     );
-    util::show_diff(
-        "indirect test",
+    diff::show(
+        diff::Kind::IndirectTest,
         &info.test_dependencies.indirect,
         &deps.1.indirect,
     );
@@ -140,8 +149,8 @@ fn uninstall_package(matches: &ArgMatches, _logger: &Logger, info: &Package) -> 
         util::format_header("PACKAGE CHANGES READY").green()
     );
 
-    util::show_diff("", &info.dependencies, &new_deps);
-    util::show_diff("test", &info.test_dependencies, &new_test_deps);
+    diff::show(diff::Kind::Regular, &info.dependencies, &new_deps);
+    diff::show(diff::Kind::Test, &info.test_dependencies, &new_test_deps);
 
     let updated = Project::Package(info.with_deps(new_deps, new_test_deps));
     if matches.is_present("yes")

@@ -1,5 +1,6 @@
 use super::util;
 use crate::{
+    diff,
     package::retriever::Retriever,
     project::{self, Application, Project},
     semver,
@@ -59,15 +60,23 @@ fn upgrade_application(
         util::format_header("PACKAGE UPGRADES FOUND").green()
     );
 
-    util::show_diff("direct", &info.dependencies.direct, &deps.0.direct);
-    util::show_diff("indirect", &info.dependencies.indirect, &deps.0.indirect);
-    util::show_diff(
-        "direct test",
+    diff::show(
+        diff::Kind::Direct,
+        &info.dependencies.direct,
+        &deps.0.direct,
+    );
+    diff::show(
+        diff::Kind::Indirect,
+        &info.dependencies.indirect,
+        &deps.0.indirect,
+    );
+    diff::show(
+        diff::Kind::DirectTest,
         &info.test_dependencies.direct,
         &deps.1.direct,
     );
-    util::show_diff(
-        "indirect test",
+    diff::show(
+        diff::Kind::IndirectTest,
         &info.test_dependencies.indirect,
         &deps.1.indirect,
     );

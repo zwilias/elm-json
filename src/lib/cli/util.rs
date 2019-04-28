@@ -9,8 +9,7 @@ use failure::{format_err, Error};
 use serde::ser::Serialize;
 use slog::Logger;
 use std::{
-    cmp::Ordering,
-    collections::{BTreeMap, HashSet},
+    collections::HashSet,
     fs::File,
     io::{BufReader, BufWriter},
 };
@@ -89,106 +88,4 @@ pub fn error_out(msg: &str, e: &Error) {
 
 pub fn format_header(x: &str) -> String {
     format!("-- {} {}", x, "-".repeat(80 - 4 - x.len()))
-}
-
-pub fn show_diff<K, T>(title: &str, left: &BTreeMap<K, T>, right: &BTreeMap<K, T>)
-where
-    T: Eq + std::fmt::Display + Sized + Copy,
-    K: std::fmt::Display + Ord + Clone,
-{
-    let it = Diff::new(&left, &right);
-    if !it.is_empty() {
-        println!(
-            "I want to make some changes to your {}{}dependencies\n",
-            title.bold(),
-            if title.is_empty() { "" } else { " " }
-        );
-        it.print();
-        println!();
-    }
-}
-
-impl<'a, K, T> Diff<'a, K, T>
-where
-    T: Sized + Eq + Copy + std::fmt::Display,
-    K: std::fmt::Display + Ord + Clone,
-{
-    pub fn new(left: &'a BTreeMap<K, T>, right: &'a BTreeMap<K, T>) -> Self {
-        let mut only_left = Vec::new();
-        let mut only_right = Vec::new();
-        let mut changed = Vec::new();
-
-        let mut iter_left = left.iter();
-        let mut iter_right = right.iter();
-
-        let mut left = iter_left.next();
-        let mut right = iter_right.next();
-
-        while let (Some((left_name, left_version)), Some((right_name, right_version))) =
-            (left, right)
-        {
-            match left_name.cmp(right_name) {
-                Ordering::Equal => {
-                    if left_version != right_version {
-                        changed.push((left_name, left_version, right_version))
-                    }
-
-                    left = iter_left.next();
-                    right = iter_right.next();
-                }
-                Ordering::Less => {
-                    only_left.push((left_name, left_version));
-                    left = iter_left.next();
-                }
-                Ordering::Greater => {
-                    only_right.push((right_name, right_version));
-                    right = iter_right.next();
-                }
-            }
-        }
-
-        while let Some((name, version)) = left {
-            only_left.push((name, version));
-            left = iter_left.next();
-        }
-
-        while let Some((name, version)) = right {
-            only_right.push((name, version));
-            right = iter_right.next();
-        }
-
-        Self {
-            only_left,
-            only_right,
-            changed,
-        }
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.only_left.is_empty() && self.only_right.is_empty() && self.changed.is_empty()
-    }
-
-    pub fn print(&self) {
-        for (k, v) in &self.only_left {
-            println!("- {} {} {}", "[DEL]".yellow(), k, v);
-        }
-
-        for (k, o, n) in &self.changed {
-            println!("- {} {} {} -> {}", "[CHG]".blue(), k, o, n);
-        }
-
-        for (k, v) in &self.only_right {
-            println!("- {} {} {}", "[ADD]".green(), k, v);
-        }
-    }
-}
-
-pub struct Diff<'a, K, T>
-where
-    K: Ord + std::fmt::Display + Clone,
-    T: Eq + Sized + Copy + std::fmt::Display,
-{
-    only_left: Vec<(&'a K, &'a T)>,
-    only_right: Vec<(&'a K, &'a T)>,
-    changed: Vec<(&'a K, &'a T, &'a T)>,
 }
