@@ -8,7 +8,6 @@ use crate::{
 };
 use clap::ArgMatches;
 use colored::Colorize;
-use dialoguer::Confirmation;
 use failure::{format_err, Error};
 use slog::Logger;
 
@@ -82,11 +81,7 @@ fn upgrade_application(
     );
 
     let updated = Project::Application(info.with_deps(deps.0).with_test_deps(deps.1));
-    if matches.is_present("yes")
-        || Confirmation::new()
-            .with_text("Should I make these changes?")
-            .interact()?
-    {
+    if util::confirm("Should I make these changes?", &matches)? {
         util::write_elm_json(&updated, &matches)?;
         println!("Saved updated elm.json!");
     } else {

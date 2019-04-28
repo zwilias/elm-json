@@ -5,14 +5,22 @@ use crate::{
 };
 use clap::ArgMatches;
 use colored::Colorize;
+use dialoguer::Confirmation;
 use failure::{format_err, Error};
 use serde::ser::Serialize;
 use slog::Logger;
 use std::{
     collections::HashSet,
     fs::File,
-    io::{BufReader, BufWriter},
+    io::{self, BufReader, BufWriter},
 };
+
+pub fn confirm(prompt: &str, matches: &ArgMatches) -> Result<bool, io::Error> {
+    if matches.is_present("yes") {
+        return Ok(true);
+    }
+    Confirmation::new().with_text(prompt).interact()
+}
 
 pub fn with_elm_json<A, P>(
     matches: &ArgMatches,

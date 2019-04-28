@@ -8,7 +8,6 @@ use crate::{
 };
 use clap::ArgMatches;
 use colored::Colorize;
-use dialoguer::Confirmation;
 use failure::Error;
 use slog::Logger;
 use std::collections::{BTreeMap, HashSet};
@@ -107,11 +106,7 @@ fn uninstall_application(
     );
 
     let updated = Project::Application(info.with_deps(deps.0).with_test_deps(deps.1));
-    if matches.is_present("yes")
-        || Confirmation::new()
-            .with_text("Should I make these changes?")
-            .interact()?
-    {
+    if util::confirm("Should I make these changes?", &matches)? {
         util::write_elm_json(&updated, &matches)?;
         println!("Saved updated elm.json!");
     } else {
@@ -153,11 +148,7 @@ fn uninstall_package(matches: &ArgMatches, _logger: &Logger, info: &Package) -> 
     diff::show(diff::Kind::Test, &info.test_dependencies, &new_test_deps);
 
     let updated = Project::Package(info.with_deps(new_deps, new_test_deps));
-    if matches.is_present("yes")
-        || Confirmation::new()
-            .with_text("Should I make these changes?")
-            .interact()?
-    {
+    if util::confirm("Should I make these changes?", &matches)? {
         util::write_elm_json(&updated, &matches)?;
         println!("Saved!");
     } else {
