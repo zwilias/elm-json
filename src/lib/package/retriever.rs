@@ -228,7 +228,6 @@ impl Retriever {
         Ok(res)
     }
 
-    // pub fn add_preferred_versions(&mut self, versions: HashMap<PackageId, Version>) {
     pub fn add_preferred_versions<T>(&mut self, versions: T)
     where
         T: IntoIterator<Item = (PackageId, Version)>,
