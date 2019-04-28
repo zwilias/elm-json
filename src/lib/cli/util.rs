@@ -9,6 +9,7 @@ use failure::{format_err, Error};
 use serde::ser::Serialize;
 use slog::Logger;
 use std::{
+    cmp::Ordering,
     collections::{BTreeMap, HashSet},
     fs::File,
     io::{BufReader, BufWriter},
@@ -126,26 +127,23 @@ where
         while let (Some((left_name, left_version)), Some((right_name, right_version))) =
             (left, right)
         {
-            if left_name == right_name {
-                if left_version != right_version {
-                    changed.push((left_name, left_version, right_version))
+            match left_name.cmp(right_name) {
+                Ordering::Equal => {
+                    if left_version != right_version {
+                        changed.push((left_name, left_version, right_version))
+                    }
+
+                    left = iter_left.next();
+                    right = iter_right.next();
                 }
-
-                left = iter_left.next();
-                right = iter_right.next();
-                continue;
-            }
-
-            if left_name < right_name {
-                only_left.push((left_name, left_version));
-                left = iter_left.next();
-                continue;
-            }
-
-            if left_name > right_name {
-                only_right.push((right_name, right_version));
-                right = iter_right.next();
-                continue;
+                Ordering::Less => {
+                    only_left.push((left_name, left_version));
+                    left = iter_left.next();
+                }
+                Ordering::Greater => {
+                    only_right.push((right_name, right_version));
+                    right = iter_right.next();
+                }
             }
         }
 
