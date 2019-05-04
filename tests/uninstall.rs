@@ -17,9 +17,9 @@ fn no_elm_json() -> TestResult {
     let mut cmd = elm_json("uninstall")?;
     cmd.arg("elm/core").arg("--").arg("foo/elm.json");
 
-    cmd.assert().failure().stderr(predicate::str::contains(
-        "I could not read an elm.json file",
-    ));
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("MISSING ELM.JSON"));
 
     Ok(())
 }

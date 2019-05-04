@@ -1,26 +1,29 @@
+use super::ErrorKind;
 use crate::project::{Application, Package, Project};
 use clap::ArgMatches;
 use colored::Colorize;
 use dialoguer;
-use failure::{bail, format_err, Error};
+use failure::{bail, format_err, Error, ResultExt};
 use serde::Serialize;
 use serde_json;
 use slog::Logger;
 use std::{fs::OpenOptions, io::BufWriter};
 
-pub fn run(matches: &ArgMatches, _logger: &Logger) -> Result<(), Error> {
+pub fn run(matches: &ArgMatches, _logger: &Logger) -> super::Result<()> {
     let options = vec!["application", "package"];
     let option_idx = dialoguer::Select::new()
         .with_prompt("What type of elm.json file do you want to create?")
         .items(&options)
         .default(0)
-        .interact()?;
+        .interact()
+        .context(ErrorKind::Unknown)?;
 
     match options[option_idx] {
-        "application" => create_application(matches),
-        "package" => create_package(matches),
+        "application" => create_application(matches).context(ErrorKind::Unknown)?,
+        "package" => create_package(matches).context(ErrorKind::Unknown)?,
         _ => unreachable!(),
     }
+    Ok(())
 }
 
 fn create_package(_matches: &ArgMatches) -> Result<(), Error> {

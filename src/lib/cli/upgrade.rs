@@ -1,4 +1,4 @@
-use super::util;
+use super::{util, ErrorKind, Result};
 use crate::{
     diff,
     package::retriever::Retriever,
@@ -8,24 +8,15 @@ use crate::{
 };
 use clap::ArgMatches;
 use colored::Colorize;
-use failure::{format_err, Error};
+use failure::ResultExt;
 use slog::Logger;
 
-pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
+pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<()> {
     util::with_elm_json(&matches, &logger, upgrade_application, |_, _, _| {
-        util::error_out(
-            "COMMAND_NOT_YET_IMPLEMENTED",
-            &format_err!("Upgrading package dependencies is not yet supported!"),
-        );
-
-        unreachable!()
+        Err(ErrorKind::NotImplemented.into())
     })
 }
-fn upgrade_application(
-    matches: &ArgMatches,
-    logger: &Logger,
-    info: Application,
-) -> Result<(), Error> {
+fn upgrade_application(matches: &ArgMatches, logger: &Logger, info: Application) -> Result<()> {
     let strictness = if matches.is_present("unsafe") {
         semver::Strictness::Unsafe
     } else {
@@ -33,17 +24,15 @@ fn upgrade_application(
     };
     let elm_version = info.elm_version();
 
-    let mut retriever: Retriever = Retriever::new(&logger, &elm_version.into())?;
+    let mut retriever: Retriever =
+        Retriever::new(&logger, &elm_version.into()).context(ErrorKind::Unknown)?;
 
     retriever.add_deps(&info.dependencies(&strictness));
     retriever.add_deps(&info.test_dependencies(&strictness));
 
     let res = Resolver::new(&logger, &mut retriever)
         .solve()
-        .unwrap_or_else(|e| {
-            util::error_out("NO VALID PACKAGE VERSIONS FOUND", &e);
-            unreachable!()
-        });
+        .context(ErrorKind::NoResolution)?;
 
     let direct_deps: Vec<_> = info.dependencies.direct.keys().cloned().collect();
     let deps = project::reconstruct(&direct_deps, &res);

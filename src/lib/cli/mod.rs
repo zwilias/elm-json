@@ -1,6 +1,7 @@
 use clap::{App, AppSettings, Arg, SubCommand};
 
 pub mod completions;
+pub mod error;
 pub mod install;
 pub mod new;
 pub mod solve;
@@ -8,6 +9,10 @@ pub mod tree;
 pub mod uninstall;
 pub mod upgrade;
 pub mod util;
+
+pub use error::{Error, ErrorKind};
+
+pub type Result<T> = std::result::Result<T, Error>;
 
 pub fn build() -> App<'static, 'static> {
     App::new("elm-json")

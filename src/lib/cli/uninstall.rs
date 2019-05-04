@@ -1,4 +1,4 @@
-use super::util;
+use super::{util, ErrorKind, Result};
 use crate::{
     diff,
     package::{self, retriever::Retriever},
@@ -8,31 +8,27 @@ use crate::{
 };
 use clap::ArgMatches;
 use colored::Colorize;
-use failure::Error;
+use failure::ResultExt;
 use slog::Logger;
 use std::collections::{BTreeMap, HashSet};
 
-pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
+pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<()> {
     util::with_elm_json(&matches, &logger, uninstall_application, uninstall_package)
 }
 
-fn uninstall_application(
-    matches: &ArgMatches,
-    logger: &Logger,
-    info: Application,
-) -> Result<(), Error> {
+fn uninstall_application(matches: &ArgMatches, logger: &Logger, info: Application) -> Result<()> {
     let strictness = semver::Strictness::Exact;
     let elm_version = info.elm_version();
 
-    let mut retriever: Retriever = Retriever::new(&logger, &elm_version.into())?;
+    let mut retriever: Retriever =
+        Retriever::new(&logger, &elm_version.into()).context(ErrorKind::Unknown)?;
 
-    let extras: Result<HashSet<_>, Error> = matches
+    let extras: HashSet<_> = matches
         .values_of_lossy("extra")
         .unwrap_or_else(Vec::new)
         .iter()
-        .map(|p| p.parse::<package::Name>())
+        .map(|p| p.parse::<package::Name>().expect("Invalid package name"))
         .collect();
-    let extras = extras?;
 
     retriever.add_preferred_versions(
         info.dependencies
@@ -64,10 +60,7 @@ fn uninstall_application(
 
     let res = Resolver::new(&logger, &mut retriever)
         .solve()
-        .unwrap_or_else(|e| {
-            util::error_out("NO VALID PACKAGE VERSIONS FOUND", &e);
-            unreachable!()
-        });
+        .context(ErrorKind::NoResolution)?;
 
     let orig_direct = info
         .dependencies
@@ -116,14 +109,13 @@ fn uninstall_application(
     Ok(())
 }
 
-fn uninstall_package(matches: &ArgMatches, _logger: &Logger, info: Package) -> Result<(), Error> {
-    let extras: Result<HashSet<_>, Error> = matches
+fn uninstall_package(matches: &ArgMatches, _logger: &Logger, info: Package) -> Result<()> {
+    let extras: HashSet<_> = matches
         .values_of_lossy("extra")
         .unwrap_or_else(Vec::new)
         .iter()
-        .map(|p| p.parse::<package::Name>())
+        .map(|p| p.parse::<package::Name>().expect("Invalid package name"))
         .collect();
-    let extras = extras?;
 
     let new_deps: BTreeMap<_, _> = info
         .dependencies

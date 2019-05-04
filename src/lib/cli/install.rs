@@ -1,4 +1,4 @@
-use super::util;
+use super::{util, ErrorKind, Result};
 use crate::{
     diff,
     package::{
@@ -11,28 +11,26 @@ use crate::{
 };
 use clap::ArgMatches;
 use colored::Colorize;
-use failure::Error;
+use failure::ResultExt;
 use petgraph::{self, visit::IntoNodeReferences};
 use slog::Logger;
 use std::collections::BTreeMap;
 
-pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
+pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<()> {
     util::with_elm_json(&matches, &logger, install_application, install_package)
 }
 
-fn install_package(matches: &ArgMatches, logger: &Logger, info: Package) -> Result<(), Error> {
-    let mut retriever = Retriever::new(&logger, &info.elm_version().to_constraint())?;
+fn install_package(matches: &ArgMatches, logger: &Logger, info: Package) -> Result<()> {
+    let mut retriever =
+        Retriever::new(&logger, &info.elm_version().to_constraint()).context(ErrorKind::Unknown)?;
 
-    let deps = info.all_dependencies()?;
+    let deps = info.all_dependencies().context(ErrorKind::InvalidElmJson)?;
     retriever.add_deps(&deps);
-    let extras = util::add_extra_deps(matches, &mut retriever)?;
+    let extras = util::add_extra_deps(matches, &mut retriever);
 
     let res = Resolver::new(&logger, &mut retriever)
         .solve()
-        .unwrap_or_else(|e| {
-            util::error_out("NO VALID PACKAGE VERSIONS FOUND", &e);
-            unreachable!()
-        });
+        .context(ErrorKind::NoResolution)?;
 
     let mut deps: BTreeMap<_, package::Range> = BTreeMap::new();
     let mut test_deps: BTreeMap<_, package::Range> = BTreeMap::new();
@@ -84,17 +82,14 @@ fn install_package(matches: &ArgMatches, logger: &Logger, info: Package) -> Resu
     Ok(())
 }
 
-fn install_application(
-    matches: &ArgMatches,
-    logger: &Logger,
-    info: Application,
-) -> Result<(), Error> {
+fn install_application(matches: &ArgMatches, logger: &Logger, info: Application) -> Result<()> {
     let strictness = semver::Strictness::Exact;
     let elm_version = info.elm_version();
 
-    let mut retriever: Retriever = Retriever::new(&logger, &elm_version.into())?;
+    let mut retriever: Retriever =
+        Retriever::new(&logger, &elm_version.into()).context(ErrorKind::Unknown)?;
 
-    let extras = util::add_extra_deps(matches, &mut retriever)?;
+    let extras = util::add_extra_deps(matches, &mut retriever);
 
     retriever.add_preferred_versions(
         info.dependencies
@@ -126,10 +121,7 @@ fn install_application(
 
     let res = Resolver::new(&logger, &mut retriever)
         .solve()
-        .unwrap_or_else(|e| {
-            util::error_out("NO VALID PACKAGE VERSIONS FOUND", &e);
-            unreachable!()
-        });
+        .context(ErrorKind::NoResolution)?;
 
     let extra_direct: Vec<_> = if matches.is_present("test") {
         Vec::new()

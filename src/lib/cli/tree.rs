@@ -1,4 +1,4 @@
-use super::util;
+use super::{util, ErrorKind, Result};
 use crate::{
     package::retriever::{self, Retriever},
     project::{Application, Package},
@@ -7,21 +7,22 @@ use crate::{
 };
 use clap::ArgMatches;
 use colored::Colorize;
-use failure::Error;
+use failure::ResultExt;
 use itertools::Itertools;
 use petgraph::{self, visit::IntoNodeReferences};
 use slog::Logger;
 use std::collections::HashSet;
 
-pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
+pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<()> {
     util::with_elm_json(&matches, &logger, tree_application, tree_package)
 }
 
-fn tree_application(matches: &ArgMatches, logger: &Logger, info: Application) -> Result<(), Error> {
+fn tree_application(matches: &ArgMatches, logger: &Logger, info: Application) -> Result<()> {
     let mut deps: Vec<_> = info.dependencies(&semver::Strictness::Exact);
     let elm_version = info.elm_version();
 
-    let mut retriever: Retriever = Retriever::new(&logger, &elm_version.into())?;
+    let mut retriever: Retriever =
+        Retriever::new(&logger, &elm_version.into()).context(ErrorKind::Unknown)?;
 
     retriever.add_preferred_versions(
         info.dependencies
@@ -43,29 +44,28 @@ fn tree_application(matches: &ArgMatches, logger: &Logger, info: Application) ->
 
     retriever.add_deps(&deps);
 
-    let res = Resolver::new(&logger, &mut retriever).solve();
-    match res {
-        Ok(v) => show_tree(&v),
-        Err(e) => util::error_out("NO VALID PACKAGE VERSIONS FOUND", &e),
-    }
+    Resolver::new(&logger, &mut retriever)
+        .solve()
+        .map(|v| show_tree(&v))
+        .context(ErrorKind::NoResolution)?;
     Ok(())
 }
 
-fn tree_package(matches: &ArgMatches, logger: &Logger, info: Package) -> Result<(), Error> {
+fn tree_package(matches: &ArgMatches, logger: &Logger, info: Package) -> Result<()> {
     let deps = if matches.is_present("test") {
-        info.all_dependencies()?
+        info.all_dependencies().context(ErrorKind::InvalidElmJson)?
     } else {
         info.dependencies()
     };
 
-    let mut retriever = Retriever::new(&logger, &info.elm_version().to_constraint())?;
+    let mut retriever =
+        Retriever::new(&logger, &info.elm_version().to_constraint()).context(ErrorKind::Unknown)?;
     retriever.add_deps(&deps);
 
-    let res = Resolver::new(&logger, &mut retriever).solve();
-    match res {
-        Ok(v) => show_tree(&v),
-        Err(e) => util::error_out("NO VALID PACKAGE VERSIONS FOUND", &e),
-    }
+    Resolver::new(&logger, &mut retriever)
+        .solve()
+        .map(|v| show_tree(&v))
+        .context(ErrorKind::NoResolution)?;
     Ok(())
 }
 

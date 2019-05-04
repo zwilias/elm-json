@@ -6,22 +6,20 @@ static A: System = System;
 
 use colored::Colorize;
 use elm_json::cli;
-use failure::{bail, Error};
+use failure::Fail;
 use slog::{o, Drain, Logger};
 
 fn main() {
     if let Err(e) = run() {
-        eprintln!(
-            "\n{}\n",
-            cli::util::format_header("UNRECOVERABLE ERROR OCCURRED").red()
-        );
-
-        eprintln!("{}", e);
+        eprintln!("\n{}\n", cli::util::format_header(&e.to_string()).red());
+        e.cause()
+            .map(|e| eprintln!("{}", textwrap::fill(&e.to_string(), 80)))
+            .unwrap_or(());
         std::process::exit(1);
     }
 }
 
-fn run() -> Result<(), Error> {
+fn run() -> cli::Result<()> {
     let matches = cli::build().get_matches();
 
     let min_log_level = match matches.occurrences_of("verbose") {
@@ -41,7 +39,10 @@ fn run() -> Result<(), Error> {
         ("new", Some(matches)) => cli::new::run(matches, &logger),
         ("completions", Some(matches)) => cli::completions::run(matches),
         ("tree", Some(matches)) => cli::tree::run(matches, &logger),
-        _ => bail!("Unsupported command?!"),
+        (cmd, matches) => panic!(
+            "Received command {} with matches {:#?} but I don't know how to handle this",
+            cmd, matches
+        ),
     }
 }
 

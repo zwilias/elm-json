@@ -1,25 +1,29 @@
+use super::{ErrorKind, Result};
 use crate::{
     package::{self, retriever::Retriever},
     project::{Application, Package, Project},
     semver,
 };
 use clap::ArgMatches;
-use colored::Colorize;
 use dialoguer::Confirmation;
-use failure::{format_err, Error};
+use failure::ResultExt;
 use serde::ser::Serialize;
 use slog::Logger;
 use std::{
     collections::HashSet,
     fs::File,
-    io::{self, BufReader, BufWriter},
+    io::{BufReader, BufWriter},
 };
 
-pub fn confirm(prompt: &str, matches: &ArgMatches) -> Result<bool, io::Error> {
+pub fn confirm(prompt: &str, matches: &ArgMatches) -> Result<bool> {
     if matches.is_present("yes") {
         return Ok(true);
     }
-    Confirmation::new().with_text(prompt).interact()
+    Confirmation::new()
+        .with_text(prompt)
+        .interact()
+        .context(ErrorKind::Unknown)
+        .map_err(|e| e.into())
 }
 
 pub fn with_elm_json<A, P>(
@@ -27,10 +31,10 @@ pub fn with_elm_json<A, P>(
     logger: &Logger,
     run_app: A,
     run_pkg: P,
-) -> Result<(), Error>
+) -> Result<()>
 where
-    A: FnOnce(&ArgMatches, &Logger, Application) -> Result<(), Error>,
-    P: FnOnce(&ArgMatches, &Logger, Package) -> Result<(), Error>,
+    A: FnOnce(&ArgMatches, &Logger, Application) -> Result<()>,
+    P: FnOnce(&ArgMatches, &Logger, Package) -> Result<()>,
 {
     match self::read_elm_json(&matches)? {
         Project::Application(app) => run_app(&matches, &logger, app),
@@ -38,60 +42,47 @@ where
     }
 }
 
-fn read_elm_json(matches: &ArgMatches) -> Result<Project, Error> {
+fn read_elm_json(matches: &ArgMatches) -> Result<Project> {
     let path = matches.value_of("INPUT").unwrap();
-    let file = File::open(path)
-        .map_err(|_| format_err!("I could not read an elm.json file from {}!", path))?;
+    let file = File::open(path).context(ErrorKind::MissingElmJson)?;
     let reader = BufReader::new(file);
-    let info: Project = serde_json::from_reader(reader)?;
+    let info: Project = serde_json::from_reader(reader).context(ErrorKind::InvalidElmJson)?;
     Ok(info)
 }
 
-pub fn write_elm_json(project: &Project, matches: &ArgMatches) -> Result<(), Error> {
+pub fn write_elm_json(project: &Project, matches: &ArgMatches) -> Result<()> {
     let path = matches.value_of("INPUT").unwrap();
-    let file = File::create(path).map_err(|_| {
-        format_err!(
-            "I tried to write to {} but failed to do so. Do you have the required access rights?",
-            path
-        )
-    })?;
+    let file = File::create(path).context(ErrorKind::UnwritableElmJson)?;
     let writer = BufWriter::new(file);
     let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
     let mut serializer = serde_json::Serializer::with_formatter(writer, formatter);
-    project.serialize(&mut serializer)?;
+    project
+        .serialize(&mut serializer)
+        .context(ErrorKind::Unknown)?;
     Ok(())
 }
 
-pub fn add_extra_deps(
-    matches: &ArgMatches,
-    retriever: &mut Retriever,
-) -> Result<HashSet<package::Name>, Error> {
+pub fn add_extra_deps(matches: &ArgMatches, retriever: &mut Retriever) -> HashSet<package::Name> {
     let mut extras = HashSet::new();
 
     for dep in &matches.values_of_lossy("extra").unwrap_or_else(Vec::new) {
         let parts: Vec<&str> = dep.split('@').collect();
         match parts.as_slice() {
             [name] => {
-                let name: package::Name = name.parse()?;
+                let name: package::Name = name.parse().expect("Invalid name parameter");
                 retriever.add_dep(name.clone(), &None);
                 extras.insert(name);
             }
             [name, version] => {
-                let version: semver::Version = version.parse()?;
-                let name: package::Name = name.parse()?;
+                let version: semver::Version = version.parse().expect("Invalid version specifier");
+                let name: package::Name = name.parse().expect("Invalid name parameter");
                 retriever.add_dep(name.clone(), &Some(version));
                 extras.insert(name);
             }
             _ => unreachable!(),
         }
     }
-    Ok(extras)
-}
-
-pub fn error_out(msg: &str, e: &Error) {
-    println!("\n{}", format_header(msg).cyan());
-    println!("\n{}", textwrap::fill(&e.to_string(), 80));
-    std::process::exit(1)
+    extras
 }
 
 pub fn format_header(x: &str) -> String {
