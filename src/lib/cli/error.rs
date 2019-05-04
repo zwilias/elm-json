@@ -2,62 +2,58 @@ use failure::{Backtrace, Context, Fail};
 use std::fmt::{self, Display};
 
 #[derive(Debug)]
-pub struct Error {
-    inner: Context<ErrorKind>,
-}
+pub struct Error(Context<ErrorKind>);
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Fail)]
 pub enum ErrorKind {
-    #[fail(display = "MISSING ELM.JSON")]
+    #[fail(display = "Missing elm.json")]
     MissingElmJson,
-    #[fail(display = "INVALID ELM.JSON")]
+    #[fail(display = "Invalid elm.json")]
     InvalidElmJson,
-    #[fail(display = "FAILED TO WRITE ELM.JSON")]
+    #[fail(display = "Failed to write elm.json")]
     UnwritableElmJson,
-    #[fail(display = "NO VALID PACKAGE VERSIONS")]
+    #[fail(display = "No valid package version")]
     NoResolution,
-    #[fail(display = "NOT YET IMPLEMENTED")]
+    #[fail(display = "Not yet implemented")]
     NotImplemented,
-    #[fail(display = "UNKNOWN ERROR")]
+    #[fail(display = "Unknown error")]
     Unknown,
 }
 
 impl Fail for Error {
     fn name(&self) -> Option<&str> {
-        self.inner.name()
+        self.0.name()
     }
 
     fn cause(&self) -> Option<&Fail> {
-        self.inner.cause()
+        self.0.cause()
     }
 
     fn backtrace(&self) -> Option<&Backtrace> {
-        self.inner.backtrace()
+        self.0.backtrace()
     }
 }
 
 impl Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Display::fmt(&self.inner, f)
+        Display::fmt(&self.0, f)
     }
 }
 
 impl Error {
     pub fn kind(&self) -> ErrorKind {
-        *self.inner.get_context()
+        *self.0.get_context()
     }
 }
 
 impl From<ErrorKind> for Error {
     fn from(kind: ErrorKind) -> Self {
-        Self {
-            inner: Context::new(kind),
-        }
+        Self(Context::new(kind))
     }
 }
 
 impl From<Context<ErrorKind>> for Error {
     fn from(inner: Context<ErrorKind>) -> Self {
-        Self { inner }
+        Self(inner)
     }
 }

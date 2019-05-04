@@ -11,7 +11,10 @@ use slog::{o, Drain, Logger};
 
 fn main() {
     if let Err(e) = run() {
-        eprintln!("\n{}\n", cli::util::format_header(&e.to_string()).red());
+        eprintln!(
+            "\n{}\n",
+            cli::util::format_header(&e.to_string().to_uppercase()).red()
+        );
         e.cause()
             .map(|e| eprintln!("{}", textwrap::fill(&e.to_string(), 80)))
             .unwrap_or(());
