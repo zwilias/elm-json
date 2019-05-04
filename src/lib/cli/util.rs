@@ -11,6 +11,7 @@ use serde::ser::Serialize;
 use slog::Logger;
 use std::{
     collections::HashSet,
+    convert,
     fs::File,
     io::{BufReader, BufWriter},
 };
@@ -23,7 +24,7 @@ pub fn confirm(prompt: &str, matches: &ArgMatches) -> Result<bool> {
         .with_text(prompt)
         .interact()
         .context(ErrorKind::Unknown)
-        .map_err(|e| e.into())
+        .map_err(convert::Into::into)
 }
 
 pub fn with_elm_json<A, P>(
