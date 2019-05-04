@@ -17,11 +17,7 @@ pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
     util::with_elm_json(&matches, &logger, tree_application, tree_package)
 }
 
-fn tree_application(
-    matches: &ArgMatches,
-    logger: &Logger,
-    info: &Application,
-) -> Result<(), Error> {
+fn tree_application(matches: &ArgMatches, logger: &Logger, info: Application) -> Result<(), Error> {
     let mut deps: Vec<_> = info.dependencies(&semver::Strictness::Exact);
     let elm_version = info.elm_version();
 
@@ -55,7 +51,7 @@ fn tree_application(
     Ok(())
 }
 
-fn tree_package(matches: &ArgMatches, logger: &Logger, info: &Package) -> Result<(), Error> {
+fn tree_package(matches: &ArgMatches, logger: &Logger, info: Package) -> Result<(), Error> {
     let deps = if matches.is_present("test") {
         info.all_dependencies()?
     } else {

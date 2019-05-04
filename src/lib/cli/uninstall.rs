@@ -19,7 +19,7 @@ pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
 fn uninstall_application(
     matches: &ArgMatches,
     logger: &Logger,
-    info: &Application,
+    info: Application,
 ) -> Result<(), Error> {
     let strictness = semver::Strictness::Exact;
     let elm_version = info.elm_version();
@@ -105,7 +105,7 @@ fn uninstall_application(
         &deps.1.indirect,
     );
 
-    let updated = Project::Application(info.clone().with(deps.0, deps.1));
+    let updated = Project::Application(info.with(deps.0, deps.1));
     if util::confirm("Should I make these changes?", &matches)? {
         util::write_elm_json(&updated, &matches)?;
         println!("Saved updated elm.json!");
@@ -116,7 +116,7 @@ fn uninstall_application(
     Ok(())
 }
 
-fn uninstall_package(matches: &ArgMatches, _logger: &Logger, info: &Package) -> Result<(), Error> {
+fn uninstall_package(matches: &ArgMatches, _logger: &Logger, info: Package) -> Result<(), Error> {
     let extras: Result<HashSet<_>, Error> = matches
         .values_of_lossy("extra")
         .unwrap_or_else(Vec::new)

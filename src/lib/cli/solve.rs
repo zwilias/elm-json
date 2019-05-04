@@ -16,7 +16,7 @@ pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
 fn solve_application(
     matches: &ArgMatches,
     logger: &Logger,
-    info: &Application,
+    info: Application,
 ) -> Result<(), Error> {
     let deps = &info.dependencies(&semver::Strictness::Exact);
     let elm_version = info.elm_version();
@@ -62,7 +62,7 @@ fn solve_application(
     Ok(())
 }
 
-fn solve_package(matches: &ArgMatches, logger: &Logger, info: &Package) -> Result<(), Error> {
+fn solve_package(matches: &ArgMatches, logger: &Logger, info: Package) -> Result<(), Error> {
     let deps = if matches.is_present("test") {
         info.all_dependencies()?
     } else {

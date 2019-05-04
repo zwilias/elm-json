@@ -20,7 +20,7 @@ pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
     util::with_elm_json(&matches, &logger, install_application, install_package)
 }
 
-fn install_package(matches: &ArgMatches, logger: &Logger, info: &Package) -> Result<(), Error> {
+fn install_package(matches: &ArgMatches, logger: &Logger, info: Package) -> Result<(), Error> {
     let mut retriever = Retriever::new(&logger, &info.elm_version().to_constraint())?;
 
     let deps = info.all_dependencies()?;
@@ -87,7 +87,7 @@ fn install_package(matches: &ArgMatches, logger: &Logger, info: &Package) -> Res
 fn install_application(
     matches: &ArgMatches,
     logger: &Logger,
-    info: &Application,
+    info: Application,
 ) -> Result<(), Error> {
     let strictness = semver::Strictness::Exact;
     let elm_version = info.elm_version();
@@ -174,7 +174,7 @@ fn install_application(
         &deps.1.indirect,
     );
 
-    let updated = Project::Application(info.clone().with(deps.0, deps.1));
+    let updated = Project::Application(info.with(deps.0, deps.1));
     if util::confirm("Should I make these changes?", &matches)? {
         util::write_elm_json(&updated, &matches)?;
         println!("Saved updated elm.json!");

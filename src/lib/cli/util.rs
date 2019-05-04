@@ -29,12 +29,12 @@ pub fn with_elm_json<A, P>(
     run_pkg: P,
 ) -> Result<(), Error>
 where
-    A: FnOnce(&ArgMatches, &Logger, &Application) -> Result<(), Error>,
-    P: FnOnce(&ArgMatches, &Logger, &Package) -> Result<(), Error>,
+    A: FnOnce(&ArgMatches, &Logger, Application) -> Result<(), Error>,
+    P: FnOnce(&ArgMatches, &Logger, Package) -> Result<(), Error>,
 {
     match self::read_elm_json(&matches)? {
-        Project::Application(app) => run_app(&matches, &logger, &app),
-        Project::Package(pkg) => run_pkg(&matches, &logger, &pkg),
+        Project::Application(app) => run_app(&matches, &logger, app),
+        Project::Package(pkg) => run_pkg(&matches, &logger, pkg),
     }
 }
 

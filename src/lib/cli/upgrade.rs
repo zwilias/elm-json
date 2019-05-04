@@ -24,7 +24,7 @@ pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<(), Error> {
 fn upgrade_application(
     matches: &ArgMatches,
     logger: &Logger,
-    info: &Application,
+    info: Application,
 ) -> Result<(), Error> {
     let strictness = if matches.is_present("unsafe") {
         semver::Strictness::Unsafe
@@ -80,7 +80,7 @@ fn upgrade_application(
         &deps.1.indirect,
     );
 
-    let updated = Project::Application(info.clone().with(deps.0, deps.1));
+    let updated = Project::Application(info.with(deps.0, deps.1));
     if util::confirm("Should I make these changes?", &matches)? {
         util::write_elm_json(&updated, &matches)?;
         println!("Saved updated elm.json!");
