@@ -86,6 +86,27 @@ pub fn add_extra_deps(matches: &ArgMatches, retriever: &mut Retriever) -> HashSe
     extras
 }
 
+pub fn valid_package_name(name: String) -> std::result::Result<(), String> {
+    let name: std::result::Result<package::Name, _> = name.parse();
+    name.map(|_| ()).map_err(|e| e.to_string())
+}
+
+pub fn valid_version(version: String) -> std::result::Result<(), String> {
+    let version: std::result::Result<semver::Version, _> = version.parse();
+    version.map(|_| ()).map_err(|e| e.to_string())
+}
+
+pub fn valid_package(pkg: String) -> std::result::Result<(), String> {
+    let parts: Vec<&str> = pkg.split('@').collect();
+    match parts.as_slice() {
+        [name] => valid_package_name(name.to_string()),
+        [name, version] => {
+            valid_package_name(name.to_string()).and_then(|_| valid_version(version.to_string()))
+        }
+        _ => unreachable!(),
+    }
+}
+
 pub fn format_header(x: &str) -> String {
     format!("-- {} {}", x, "-".repeat(80 - 4 - x.len()))
 }

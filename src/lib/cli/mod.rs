@@ -62,6 +62,7 @@ pub fn build() -> App<'static, 'static> {
                         .help("Package to install, e.g. elm/core or elm/core@1.0.2")
                         .takes_value(true)
                         .value_name("PACKAGE")
+                        .validator(util::valid_package)
                         .required(true)
                         .multiple(true),
                 )
@@ -85,6 +86,7 @@ pub fn build() -> App<'static, 'static> {
                         .takes_value(true)
                         .value_name("PACKAGE")
                         .required(true)
+                        .validator(util::valid_package_name)
                         .multiple(true),
                 )
                 .arg(
@@ -131,6 +133,7 @@ pub fn build() -> App<'static, 'static> {
                         .help("Specify extra dependencies, e.g. elm/core or elm/core@1.0.2")
                         .takes_value(true)
                         .value_name("PACKAGE")
+                        .validator(util::valid_package)
                         .multiple(true),
                 )
                 .arg(
