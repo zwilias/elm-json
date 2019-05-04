@@ -17,7 +17,7 @@ pub enum Project {
     Package(Package),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "kebab-case")]
 pub struct Application {
     source_directories: Vec<String>,
@@ -48,25 +48,25 @@ pub fn reconstruct(
     let root = g.node_references().nth(0).unwrap().0;
 
     for idx in g.neighbors(root) {
-        let item = g[idx].clone();
+        let item = &g[idx];
         visited.insert(idx.index());
 
-        if let retriever::PackageId::Pkg(name) = item.id {
-            if direct_names.contains(&name) {
-                direct.insert(name, item.version);
+        if let retriever::PackageId::Pkg(name) = &item.id {
+            if direct_names.contains(name) {
+                direct.insert(name.clone(), item.version);
                 let mut dfs = petgraph::visit::Dfs::new(&g, idx);
                 while let Some(nx) = dfs.next(&g) {
                     if visited.contains(&nx.index()) {
                         continue;
                     }
                     visited.insert(nx.index());
-                    let item = g[nx].clone();
+                    let item = &g[nx];
 
-                    if let retriever::PackageId::Pkg(dep) = item.id {
+                    if let retriever::PackageId::Pkg(dep) = &item.id {
                         if direct_names.contains(&dep) {
                             continue;
                         }
-                        indirect.insert(dep, item.version);
+                        indirect.insert(dep.clone(), item.version);
                     }
                 }
             } else {
@@ -77,9 +77,9 @@ pub fn reconstruct(
 
     for idx in test_idxs {
         let idx = petgraph::graph::NodeIndex::new(idx);
-        let item = g[idx].clone();
-        if let retriever::PackageId::Pkg(name) = item.id {
-            test_direct.insert(name, item.version);
+        let item = &g[idx];
+        if let retriever::PackageId::Pkg(name) = &item.id {
+            test_direct.insert(name.clone(), item.version);
 
             let mut bfs = petgraph::visit::Bfs::new(&g, idx);
             while let Some(nx) = bfs.next(&g) {
@@ -87,10 +87,10 @@ pub fn reconstruct(
                     continue;
                 }
                 visited.insert(nx.index());
-                let item = g[nx].clone();
+                let item = &g[nx];
 
-                if let retriever::PackageId::Pkg(dep) = item.id {
-                    test_indirect.insert(dep, item.version);
+                if let retriever::PackageId::Pkg(dep) = &item.id {
+                    test_indirect.insert(dep.clone(), item.version);
                 }
             }
         }
@@ -122,16 +122,13 @@ impl From<solver::Graph<solver::Summary<retriever::PackageId>>> for AppDependenc
         let mut bfs = petgraph::visit::Bfs::new(&g, root);
 
         while let Some(nx) = bfs.next(&g) {
-            if nx == root {
-                continue;
-            }
-            let item = g[nx].clone();
+            let item = &g[nx];
 
-            if let retriever::PackageId::Pkg(name) = item.id {
+            if let retriever::PackageId::Pkg(name) = &item.id {
                 if g.find_edge(root, nx).is_some() {
-                    direct.insert(name, item.version);
+                    direct.insert(name.clone(), item.version);
                 } else {
-                    indirect.insert(name, item.version);
+                    indirect.insert(name.clone(), item.version);
                 }
             }
         }
@@ -187,23 +184,11 @@ impl Application {
         self.elm_version
     }
 
-    pub fn with_deps(&self, deps: AppDependencies) -> Self {
+    pub fn with(self, dependencies: AppDependencies, test_dependencies: AppDependencies) -> Self {
         Self {
-            source_directories: self.source_directories.clone(),
-            elm_version: self.elm_version,
-            dependencies: deps,
-            test_dependencies: self.test_dependencies.clone(),
-            other: self.other.clone(),
-        }
-    }
-
-    pub fn with_test_deps(&self, deps: AppDependencies) -> Self {
-        Self {
-            source_directories: self.source_directories.clone(),
-            elm_version: self.elm_version,
-            dependencies: self.dependencies.clone(),
-            test_dependencies: deps,
-            other: self.other.clone(),
+            dependencies,
+            test_dependencies,
+            ..self
         }
     }
 }

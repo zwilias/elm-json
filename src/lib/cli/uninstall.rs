@@ -105,7 +105,7 @@ fn uninstall_application(
         &deps.1.indirect,
     );
 
-    let updated = Project::Application(info.with_deps(deps.0).with_test_deps(deps.1));
+    let updated = Project::Application(info.clone().with(deps.0, deps.1));
     if util::confirm("Should I make these changes?", &matches)? {
         util::write_elm_json(&updated, &matches)?;
         println!("Saved updated elm.json!");
