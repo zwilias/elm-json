@@ -2,10 +2,10 @@ use failure::{Backtrace, Context, Fail};
 use std::fmt::{self, Display};
 
 #[derive(Debug)]
-pub struct Error(Context<ErrorKind>);
+pub struct Error(Context<Kind>);
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Fail)]
-pub enum ErrorKind {
+pub enum Kind {
     #[fail(display = "Missing elm.json")]
     MissingElmJson,
     #[fail(display = "Invalid elm.json")]
@@ -14,8 +14,8 @@ pub enum ErrorKind {
     UnwritableElmJson,
     #[fail(display = "No valid package version")]
     NoResolution,
-    #[fail(display = "Not yet implemented")]
-    NotImplemented,
+    #[fail(display = "Not supported")]
+    NotSupported,
     #[fail(display = "Unknown error")]
     Unknown,
 }
@@ -41,19 +41,19 @@ impl Display for Error {
 }
 
 impl Error {
-    pub fn kind(&self) -> ErrorKind {
+    pub fn kind(&self) -> Kind {
         *self.0.get_context()
     }
 }
 
-impl From<ErrorKind> for Error {
-    fn from(kind: ErrorKind) -> Self {
+impl From<Kind> for Error {
+    fn from(kind: Kind) -> Self {
         Self(Context::new(kind))
     }
 }
 
-impl From<Context<ErrorKind>> for Error {
-    fn from(inner: Context<ErrorKind>) -> Self {
+impl From<Context<Kind>> for Error {
+    fn from(inner: Context<Kind>) -> Self {
         Self(inner)
     }
 }

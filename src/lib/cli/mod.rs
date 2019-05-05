@@ -10,7 +10,7 @@ pub mod uninstall;
 pub mod upgrade;
 pub mod util;
 
-pub use error::{Error, ErrorKind};
+pub use error::{Error, Kind as ErrorKind};
 
 pub type Result<T> = std::result::Result<T, Error>;
 

@@ -19,14 +19,13 @@ pub fn run(matches: &ArgMatches, _logger: &Logger) -> super::Result<()> {
         .context(ErrorKind::Unknown)?;
 
     match options[option_idx] {
-        "application" => create_application(matches).context(ErrorKind::Unknown)?,
-        "package" => create_package(matches).context(ErrorKind::Unknown)?,
+        "application" => create_application(matches),
+        "package" => create_package(matches),
         _ => unreachable!(),
     }
-    Ok(())
 }
 
-fn create_package(_matches: &ArgMatches) -> Result<(), Error> {
+fn create_package(_matches: &ArgMatches) -> super::Result<()> {
     let name = until_valid(
         str::parse,
         "Enter a name for your package: (format: author/project)",
@@ -41,7 +40,8 @@ fn create_package(_matches: &ArgMatches) -> Result<(), Error> {
         .with_prompt("Choose a license for your package")
         .items(&license_options)
         .default(0)
-        .interact()?;
+        .interact()
+        .context(ErrorKind::Unknown)?;
 
     let license = match license_options[license_option_idx] {
         "other..." => until_valid(
@@ -69,14 +69,17 @@ fn validate_summary(summary: &str) -> Result<String, Error> {
     Ok(summary.to_string())
 }
 
-fn until_valid<X, F>(validate: F, prompt: &str) -> Result<X, Error>
+fn until_valid<X, F>(validate: F, prompt: &str) -> super::Result<X>
 where
     F: Fn(&str) -> Result<X, Error>,
 {
     let mut res: X;
 
     loop {
-        let res_: String = dialoguer::Input::new().with_prompt(prompt).interact()?;
+        let res_: String = dialoguer::Input::new()
+            .with_prompt(prompt)
+            .interact()
+            .context(ErrorKind::Unknown)?;
         match validate(&res_) {
             Ok(v) => {
                 res = v;
@@ -88,21 +91,23 @@ where
     Ok(res)
 }
 
-fn create_application(_matches: &ArgMatches) -> Result<(), Error> {
+fn create_application(_matches: &ArgMatches) -> super::Result<()> {
     let proj = Project::Application(Application::new());
     create_elm_json(&proj)
 }
 
-fn create_elm_json(info: &Project) -> Result<(), Error> {
+fn create_elm_json(info: &Project) -> super::Result<()> {
     let file = OpenOptions::new()
         .write(true)
         .create_new(true)
-        .open("elm.json").map_err(|_| format_err!("I tried to create a new elm.json file but failed! Either an elm.json already exists or I cannot write in the current directory."))?;
+        .open("elm.json")
+        .context(ErrorKind::UnwritableElmJson)?;
     let writer = BufWriter::new(file);
     let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
     let mut serializer = serde_json::Serializer::with_formatter(writer, formatter);
 
-    info.serialize(&mut serializer)?;
+    info.serialize(&mut serializer)
+        .context(ErrorKind::Unknown)?;
     Ok(())
 }
 

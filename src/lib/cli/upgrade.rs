@@ -13,7 +13,7 @@ use slog::Logger;
 
 pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<()> {
     util::with_elm_json(&matches, &logger, upgrade_application, |_, _, _| {
-        Err(ErrorKind::NotImplemented.into())
+        Err(ErrorKind::NotSupported.into())
     })
 }
 fn upgrade_application(matches: &ArgMatches, logger: &Logger, info: Application) -> Result<()> {
