@@ -155,7 +155,7 @@ impl Package {
         let mut dependencies = BTreeMap::new();
         dependencies.insert(
             Name::new("elm", "core").unwrap(),
-            Range::new(Version::new(1, 0, 0), Version::new(2, 0, 0)),
+            Range::new(Version::new(1, 0, 0), Version::new(2, 0, 0), false),
         );
 
         Self {
@@ -166,7 +166,7 @@ impl Package {
             version: Version::new(1, 0, 0),
             dependencies,
             test_dependencies: BTreeMap::new(),
-            elm_version: Range::new(Version::new(0, 19, 0), Version::new(0, 20, 0)),
+            elm_version: Range::new(Version::new(0, 19, 0), Version::new(0, 20, 0), false),
             other: BTreeMap::new(),
         }
     }
@@ -227,11 +227,16 @@ impl Package {
 pub struct Range {
     lower: Version,
     upper: Version,
+    upper_inclusive: bool,
 }
 
 impl Range {
-    pub fn new(lower: Version, upper: Version) -> Self {
-        Self { lower, upper }
+    pub fn new(lower: Version, upper: Version, upper_inclusive: bool) -> Self {
+        Self {
+            lower,
+            upper,
+            upper_inclusive,
+        }
     }
 
     pub fn to_constraint(&self) -> semver::Constraint {
@@ -239,11 +244,13 @@ impl Range {
     }
 
     pub fn to_constraint_range(&self) -> semver::Range {
-        semver::Range::new(
-            semver::Interval::Closed(self.lower),
-            semver::Interval::Open(self.upper),
-        )
-        .unwrap()
+        let upper = if self.upper_inclusive {
+            semver::Interval::Closed(self.upper)
+        } else {
+            semver::Interval::Open(self.upper)
+        };
+
+        semver::Range::new(semver::Interval::Closed(self.lower), upper).unwrap()
     }
 }
 
@@ -256,7 +263,12 @@ impl str::FromStr for Range {
             [lower, "<=", "v", "<", upper] => {
                 let lower: Version = lower.to_string().parse()?;
                 let upper: Version = upper.to_string().parse()?;
-                Ok(Self { lower, upper })
+                Ok(Range::new(lower, upper, false))
+            }
+            [lower, "<=", "v", "<=", upper] => {
+                let lower: Version = lower.to_string().parse()?;
+                let upper: Version = upper.to_string().parse()?;
+                Ok(Range::new(lower, upper, true))
             }
             _ => Err(format_err!("Invalid range: {}", s)),
         }
@@ -265,16 +277,14 @@ impl str::FromStr for Range {
 
 impl From<Version> for Range {
     fn from(v: Version) -> Self {
-        Self {
-            lower: v,
-            upper: Version::new(v.major() + 1, 0, 0),
-        }
+        Range::new(v, Version::new(v.major() + 1, 0, 0), false)
     }
 }
 
 impl fmt::Display for Range {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} <= v < {}", self.lower, self.upper)
+        let upper_op = if self.upper_inclusive { "<=" } else { "<" };
+        write!(f, "{} <= v {} {}", self.lower, upper_op, self.upper)
     }
 }
 
