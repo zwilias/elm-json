@@ -39,3 +39,6 @@ path = "src/bin/main.rs"
 [profile.release]
 lto = true
 panic = 'abort'
+
+[patch.crates-io]
+curl = { git = "https://github.com/zwilias/curl-rust.git" }
