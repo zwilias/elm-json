@@ -40,5 +40,5 @@ path = "src/bin/main.rs"
 lto = true
 panic = 'abort'
 
-# [patch.crates-io]
-# chttp = { git = "https://github.com/zwilias/chttp.git" }
+[patch.crates-io]
+chttp = { git = "https://github.com/zwilias/chttp.git" }
