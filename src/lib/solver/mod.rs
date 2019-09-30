@@ -92,7 +92,7 @@ where
             bail!("{}", &s.pp_error(s.incompats.len() - 1))
         } else {
             info!(s.logger, "solve successful");
-            Ok(r.unwrap())
+            r
         }
     }
 
@@ -209,9 +209,9 @@ where
 
         if let Some((pkg, con, positive)) = unsatis {
             self.derivation(pkg.clone(), con.complement(), icix, positive);
-            return IncompatMatch::Almost(pkg.clone());
+            IncompatMatch::Almost(pkg.clone())
         } else {
-            return IncompatMatch::Satisfied;
+            IncompatMatch::Satisfied
         }
     }
 
@@ -490,6 +490,7 @@ where
         s
     }
 
+    #[allow(clippy::unnecessary_unwrap)]
     fn pp_err_recur(
         &self,
         icix: usize,

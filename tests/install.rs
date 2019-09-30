@@ -4,13 +4,13 @@ use predicates::prelude::*;
 use std::path::Path;
 use std::{error::Error, process::Command};
 
-fn elm_json_install() -> Result<Command, Box<Error>> {
+fn elm_json_install() -> Result<Command, Box<dyn Error>> {
     let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME"))?;
     cmd.arg("install");
     Ok(cmd)
 }
 
-type TestResult = Result<(), Box<Error>>;
+type TestResult = Result<(), Box<dyn Error>>;
 
 #[test]
 fn no_elm_json() -> TestResult {

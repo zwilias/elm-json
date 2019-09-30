@@ -73,7 +73,7 @@ fn until_valid<X, F>(validate: F, prompt: &str) -> super::Result<X>
 where
     F: Fn(&str) -> Result<X, Error>,
 {
-    let mut res: X;
+    let res: X;
 
     loop {
         let res_: String = dialoguer::Input::new()
