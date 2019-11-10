@@ -21,6 +21,6 @@
     "elm-json": "bin/elm-json"
   },
   "dependencies": {
-    "binwrap": "^0.2.0"
+    "binwrap": "^0.2.2"
   }
 }
