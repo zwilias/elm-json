@@ -49,10 +49,11 @@ pub fn reconstruct(
 
     for idx in g.neighbors(root) {
         let item = &g[idx];
-        visited.insert(idx.index());
 
         if let retriever::PackageId::Pkg(name) = &item.id {
             if direct_names.contains(name) {
+                visited.insert(idx.index());
+
                 direct.insert(name.clone(), item.version);
                 let mut dfs = petgraph::visit::Dfs::new(&g, idx);
                 while let Some(nx) = dfs.next(&g) {
@@ -79,6 +80,7 @@ pub fn reconstruct(
         let idx = petgraph::graph::NodeIndex::new(idx);
         let item = &g[idx];
         if let retriever::PackageId::Pkg(name) = &item.id {
+            visited.insert(idx.index());
             test_direct.insert(name.clone(), item.version);
 
             let mut bfs = petgraph::visit::Bfs::new(&g, idx);

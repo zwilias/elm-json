@@ -129,13 +129,13 @@ fn install_application(matches: &ArgMatches, logger: &Logger, info: Application)
         extras.iter().cloned().collect()
     };
 
-    let mut orig_direct = info
+    let mut orig_direct: Vec<_> = info
         .dependencies
         .direct
         .keys()
         .filter(|&x| !extras.contains(&x.clone()))
         .cloned()
-        .collect::<Vec<_>>();
+        .collect();
     orig_direct.extend(extra_direct);
 
     let deps = project::reconstruct(&orig_direct, &res);
