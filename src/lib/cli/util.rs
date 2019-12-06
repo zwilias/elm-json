@@ -6,7 +6,7 @@ use crate::{
 };
 use clap::ArgMatches;
 use dialoguer::Confirmation;
-use failure::ResultExt;
+use failure::{format_err, ResultExt};
 use serde::ser::Serialize;
 use slog::Logger;
 use std::{
@@ -71,19 +71,38 @@ pub fn add_extra_deps(matches: &ArgMatches, retriever: &mut Retriever) -> HashSe
         match parts.as_slice() {
             [name] => {
                 let name: package::Name = name.parse().expect("Invalid name parameter");
-                retriever.add_dep(name.clone(), &None);
+                retriever.add_dep(name.clone(), None);
                 extras.insert(name);
             }
             [name, version] => {
-                let version: semver::Version = version.parse().expect("Invalid version specifier");
+                let version: semver::Constraint = version
+                    .parse::<semver::Version>()
+                    .map(semver::Constraint::from)
+                    .or_else(|_| lax_version_from_string(version))
+                    .expect("Invalid version specifier");
                 let name: package::Name = name.parse().expect("Invalid name parameter");
-                retriever.add_dep(name.clone(), &Some(version));
+                retriever.add_dep(name.clone(), Some(version));
                 extras.insert(name);
             }
             _ => unreachable!(),
         }
     }
     extras
+}
+
+fn lax_version_from_string(version: &str) -> std::result::Result<semver::Constraint, String> {
+    let parts: Vec<u64> = version
+        .split('.')
+        .map(str::parse)
+        .collect::<std::result::Result<Vec<_>, _>>()
+        .map_err(|e| format_err!("{}", e).to_string())?;
+    match parts.as_slice() {
+        [major] => Ok(semver::Constraint::from(semver::Range::from(
+            &semver::Version::new(*major, 0, 0),
+            &semver::Strictness::Safe,
+        ))),
+        _ => Err("Expected a valid lax version spec".into()),
+    }
 }
 
 pub fn valid_package_name(name: String) -> std::result::Result<(), String> {
@@ -96,13 +115,25 @@ pub fn valid_version(version: String) -> std::result::Result<(), String> {
     version.map(|_| ()).map_err(|e| e.to_string())
 }
 
+pub fn valid_lax_version(version: String) -> std::result::Result<(), String> {
+    let parts: Vec<u64> = version
+        .split('.')
+        .map(str::parse)
+        .collect::<std::result::Result<Vec<_>, _>>()
+        .map_err(|e| format_err!("{}", e).to_string())?;
+    match parts.as_slice() {
+        [_] => Ok(()),
+        _ => Err(format_err!("Invalid lax version: {}", version).to_string()),
+    }
+}
+
 pub fn valid_package(pkg: String) -> std::result::Result<(), String> {
     let parts: Vec<&str> = pkg.split('@').collect();
     match parts.as_slice() {
         [name] => valid_package_name(name.to_string()),
-        [name, version] => {
-            valid_package_name(name.to_string()).and_then(|_| valid_version(version.to_string()))
-        }
+        [name, version] => valid_package_name(name.to_string()).and_then(|_| {
+            valid_version(version.to_string()).or_else(|_| valid_lax_version(version.to_string()))
+        }),
         _ => unreachable!(),
     }
 }

@@ -101,9 +101,8 @@ impl Retriever {
         }));
     }
 
-    pub fn add_dep(&mut self, name: package::Name, version: &Option<Version>) {
-        let constraint =
-            version.map_or_else(Constraint::empty, |x| Constraint::from(x).complement());
+    pub fn add_dep(&mut self, name: package::Name, version: Option<Constraint>) {
+        let constraint = version.map_or_else(Constraint::empty, |x| x.complement());
         let deps = self.deps_cache.entry(Self::root()).or_insert_with(Vec::new);
         deps.push(Incompatibility::from_dep(
             Self::root(),
