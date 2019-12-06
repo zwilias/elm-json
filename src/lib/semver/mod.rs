@@ -361,7 +361,7 @@ impl Range {
         let lower = Interval::Closed(*v);
         let upper = match strictness {
             Strictness::Exact => Interval::Closed(*v),
-            Strictness::Safe => Interval::Open(Version::new(v.major + 1, v.minor, v.patch)),
+            Strictness::Safe => Interval::Open(Version::new(v.major + 1, 0, 0)),
             Strictness::Unsafe => Interval::Unbounded,
         };
 
