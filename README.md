@@ -20,6 +20,7 @@ possible, to prevent downloading things you may already have on your filesystem.
       * [elm-json help](#elm-json-help)
       * [Adding dependencies: elm-json install](#adding-dependencies-elm-json-install)
          * [Example: Installing the latest available version of a package](#example-installing-the-latest-available-version-of-a-package)
+         * [Example: Installing the latest available 2.x.x version of a package](#example-installing-the-latest-available-2xx-version-of-a-package)
          * [Example: Installing as a test-dependency](#example-installing-as-a-test-dependency)
          * [Example: Installing multiple dependencies to a specified elm.json file](#example-installing-multiple-dependencies-to-a-specified-elmjson-file)
       * [Removing dependencies: elm-json uninstall](#removing-dependencies-elm-json-uninstall)
@@ -32,7 +33,7 @@ possible, to prevent downloading things you may already have on your filesystem.
       * [For tooling: elm-json solve](#for-tooling-elm-json-solve)
       * [Generating shell completions: elm-json completions](#generating-shell-completions-elm-json-completions)
 
-<!-- Added by: ilias, at: Fri Apr 26 18:12:37 CEST 2019 -->
+<!-- Added by: ilias, at: Fri Dec  6 17:30:36 CET 2019 -->
 
 <!--te-->
 
@@ -109,6 +110,15 @@ install`.
 
 For applications, this will pick the latest available version, adding all
 indirect dependencies as well.
+
+### Example: Installing the latest available 2.x.x version of a package
+
+```
+elm-json install elm/http@2
+```
+
+Adds the latest version of `elm/http` with `2` as its major version number to
+your dependencies.
 
 ### Example: Installing as a test-dependency
 

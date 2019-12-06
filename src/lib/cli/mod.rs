@@ -59,7 +59,7 @@ pub fn build() -> App<'static, 'static> {
                 )
                 .arg(
                     Arg::with_name("extra")
-                        .help("Package to install, e.g. elm/core or elm/core@1.0.2")
+                        .help("Package to install, e.g. elm/core or elm/core@1.0.2 or elm/core@1")
                         .takes_value(true)
                         .value_name("PACKAGE")
                         .validator(util::valid_package)
