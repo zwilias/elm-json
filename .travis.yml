@@ -13,6 +13,18 @@ matrix:
       os: osx
     - name: Linux
       env: TARGET=x86_64-unknown-linux-musl
+    - name: RPI
+      env: TARGET=armv7-unknown-linux-musleabihf
+
+env:
+  global:
+    - CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_LINKER=arm-linux-gcc
+    - TOOLCHAIN=armv7-eabihf--musl--stable-2018.11-1
+    - TOOLCHAIN_URL="https://toolchains.bootlin.com/downloads/releases/toolchains/armv7-eabihf/tarballs/"
+    - CC_armv7_unknown_linux_musleabihf=arm-linux-gcc
+    - CXX_armv7_unknown_linux_musleabihf=arm-linux-g++
+    - LD_armv7_unknown_linux_musleabihf=arm-linux-ld
+    - RUSTFLAGS="-C link-arg=-s"
 
 before_script:
   - rustup target add $TARGET
@@ -27,7 +39,11 @@ script:
   - cargo fmt --all -- --check
 
 before_deploy:
-  - RUSTFLAGS="-C link-arg=-s" cargo build --release --target $TARGET --locked
+  - |
+    if [ "$TARGET" = "armv7-unknown-linux-musleabihf" ]; then
+      curl -o- ${TOOLCHAIN_URL}/${TOOLCHAIN}.tar.bz2 | tar -xjf -;
+    fi
+  - PATH="${PATH}:${TRAVIS_BUILD_DIR}/${TOOLCHAIN}/bin" cargo build --release --target $TARGET --locked
   - tar czvf elm-json-$TRAVIS_TAG-$TARGET.tar.gz -C target/$TARGET/release elm-json
 
 deploy:
