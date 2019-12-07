@@ -15,6 +15,8 @@ module.exports = binwrap({
     urls: {
         "darwin-x64": root + "-x86_64-apple-darwin.tar.gz",
         "linux-x64": root + "-x86_64-unknown-linux-musl.tar.gz",
+        "linux-arm": root + "-armv7-unknown-linux-musleabihf.tar.gz",
+        "linux-arm64": root + "-armv7-unknown-linux-musleabihf.tar.gz",
         "win32-x64": root + "-x86_64-pc-windows-msvc.tar.gz",
         "win32-ia32": root + "-x86_64-pc-windows-msvc.tar.gz"
     }
