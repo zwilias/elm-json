@@ -35,7 +35,7 @@ before_script:
 
 script:
   - cargo test --locked
-  - cargo clippy --all-targets --all-features -- -D warnings
+  - cargo clippy --all-targets --all-features
   - cargo fmt --all -- --check
 
 before_deploy:
