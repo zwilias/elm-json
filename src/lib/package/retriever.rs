@@ -3,10 +3,8 @@ use crate::{
     semver::{Constraint, Range, Version},
     solver::{incompat::Incompatibility, retriever, summary},
 };
-use bincode;
 use failure::{bail, format_err, Error};
 use fs2::FileExt;
-use isahc;
 use slog::{debug, o, warn, Logger};
 use std::{
     collections::HashMap,

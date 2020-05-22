@@ -70,7 +70,7 @@ fn tree_package(matches: &ArgMatches, logger: &Logger, info: Package) -> Result<
 }
 
 fn show_tree(g: &solver::Graph<solver::Summary<retriever::PackageId>>) {
-    let root = g.node_references().nth(0).unwrap().0;
+    let root = g.node_references().next().unwrap().0;
     let mut visited: HashSet<usize> = HashSet::new();
     println!("\nproject");
 

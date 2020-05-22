@@ -2,10 +2,8 @@ use super::ErrorKind;
 use crate::project::{Application, Package, Project};
 use clap::ArgMatches;
 use colored::Colorize;
-use dialoguer;
 use failure::{bail, format_err, Error, ResultExt};
 use serde::Serialize;
-use serde_json;
 use slog::Logger;
 use std::{fs::OpenOptions, io::BufWriter};
 

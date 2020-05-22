@@ -45,7 +45,7 @@ pub fn reconstruct(
     let mut visited: HashSet<usize> = HashSet::new();
     let mut test_idxs: Vec<usize> = Vec::new();
 
-    let root = g.node_references().nth(0).unwrap().0;
+    let root = g.node_references().next().unwrap().0;
 
     for idx in g.neighbors(root) {
         let item = &g[idx];
@@ -120,7 +120,7 @@ impl From<solver::Graph<solver::Summary<retriever::PackageId>>> for AppDependenc
     fn from(g: solver::Graph<solver::Summary<retriever::PackageId>>) -> Self {
         let mut direct: BTreeMap<package::Name, Version> = BTreeMap::new();
         let mut indirect: BTreeMap<package::Name, Version> = BTreeMap::new();
-        let root = g.node_references().nth(0).unwrap().0;
+        let root = g.node_references().next().unwrap().0;
         let mut bfs = petgraph::visit::Bfs::new(&g, root);
 
         while let Some(nx) = bfs.next(&g) {

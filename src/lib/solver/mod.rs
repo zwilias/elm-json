@@ -98,10 +98,10 @@ where
 
     fn solve_loop(&mut self) -> Result<Graph<Summary<R::PackageId>>, Error> {
         let c: Constraint = self.retriever.root().version().into();
-        let pkgs = indexmap!(self.retriever.root().id().clone() => c.complement());
+        let pkgs = indexmap!(self.retriever.root().id() => c.complement());
         self.incompatibility(pkgs, IncompatibilityCause::Root);
 
-        let mut next = Some(self.retriever.root().id().clone());
+        let mut next = Some(self.retriever.root().id());
         while let Some(n) = next {
             self.propagate(n)?;
             next = self.choose_pkg_version();
@@ -113,7 +113,7 @@ where
         let mut tree = petgraph::Graph::new();
         let mut set = indexmap!();
         let mut q = VecDeque::new();
-        let root = self.retriever.root().clone();
+        let root = self.retriever.root();
         let root_node = tree.add_node(root.clone());
         set.insert(root, root_node);
         q.push_back(root_node);

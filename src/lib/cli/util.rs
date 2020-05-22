@@ -53,7 +53,7 @@ pub fn write_elm_json(project: &Project, matches: &ArgMatches) -> Result<()> {
     project
         .serialize(&mut serializer)
         .context(ErrorKind::Unknown)?;
-    write!(file, "\n").context(ErrorKind::Unknown)?;
+    writeln!(file).context(ErrorKind::Unknown)?;
     Ok(())
 }
 
@@ -124,9 +124,10 @@ pub fn valid_lax_version(version: String) -> std::result::Result<(), String> {
 pub fn valid_package(pkg: String) -> std::result::Result<(), String> {
     let parts: Vec<&str> = pkg.split('@').collect();
     match parts.as_slice() {
-        [name] => valid_package_name(name.to_string()),
-        [name, version] => valid_package_name(name.to_string()).and_then(|_| {
-            valid_version(version.to_string()).or_else(|_| valid_lax_version(version.to_string()))
+        [name] => valid_package_name((*name).to_string()),
+        [name, version] => valid_package_name((*name).to_string()).and_then(|_| {
+            valid_version((*version).to_string())
+                .or_else(|_| valid_lax_version((*version).to_string()))
         }),
         _ => unreachable!(),
     }

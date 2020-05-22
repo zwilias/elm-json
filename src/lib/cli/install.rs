@@ -35,7 +35,7 @@ fn install_package(matches: &ArgMatches, logger: &Logger, info: Package) -> Resu
     let mut deps: BTreeMap<_, package::Range> = BTreeMap::new();
     let mut test_deps: BTreeMap<_, package::Range> = BTreeMap::new();
     let direct_dep_names: Vec<_> = info.dependencies.keys().cloned().collect();
-    let root = res.node_references().nth(0).unwrap().0;
+    let root = res.node_references().next().unwrap().0;
     let for_test = matches.is_present("test");
 
     for idx in res.neighbors(root) {

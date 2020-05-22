@@ -99,7 +99,7 @@ impl Name {
             bail!("Project name may only contains lowercase letters, digits and dashes.")
         }
 
-        if !project.chars().nth(0).unwrap().is_ascii_lowercase() {
+        if !project.chars().next().unwrap().is_ascii_lowercase() {
             bail!("Project name must start with a letter")
         }
 
@@ -261,13 +261,13 @@ impl str::FromStr for Range {
         let parts: Vec<&str> = s.split(' ').collect();
         match parts.as_slice() {
             [lower, "<=", "v", "<", upper] => {
-                let lower: Version = lower.to_string().parse()?;
-                let upper: Version = upper.to_string().parse()?;
+                let lower: Version = (*lower).to_string().parse()?;
+                let upper: Version = (*upper).to_string().parse()?;
                 Ok(Range::new(lower, upper, false))
             }
             [lower, "<=", "v", "<=", upper] => {
-                let lower: Version = lower.to_string().parse()?;
-                let upper: Version = upper.to_string().parse()?;
+                let lower: Version = (*lower).to_string().parse()?;
+                let upper: Version = (*upper).to_string().parse()?;
                 Ok(Range::new(lower, upper, true))
             }
             _ => Err(format_err!("Invalid range: {}", s)),
