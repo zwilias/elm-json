@@ -5,11 +5,12 @@ use crate::{
 };
 use failure::{bail, format_err, Error};
 use fs2::FileExt;
+use serde::ser::Serialize;
 use slog::{debug, o, warn, Logger};
 use std::{
     collections::HashMap,
     env, fmt,
-    fs::{self, File, OpenOptions},
+    fs::{self, DirBuilder, File, OpenOptions},
     io::{BufReader, BufWriter},
     path::PathBuf,
 };
@@ -20,6 +21,7 @@ pub struct Retriever {
     preferred_versions: HashMap<PackageId, Version>,
     logger: Logger,
     mode: Mode,
+    offline: bool,
 }
 
 type Summary = summary::Summary<PackageId>;
@@ -59,7 +61,7 @@ impl From<package::Name> for PackageId {
 }
 
 impl Retriever {
-    pub fn new(logger: &Logger, elm_version: &Constraint) -> Result<Self, Error> {
+    pub fn new(logger: &Logger, elm_version: &Constraint, offline: bool) -> Result<Self, Error> {
         let mut deps_cache = HashMap::new();
 
         deps_cache.insert(
@@ -78,6 +80,7 @@ impl Retriever {
             preferred_versions: HashMap::new(),
             logger,
             mode: Mode::Maximize,
+            offline,
         };
 
         retriever.fetch_versions()?;
@@ -121,21 +124,25 @@ impl Retriever {
         file.lock_exclusive()?;
 
         let mut versions: HashMap<_, _> = self.fetch_cached_versions(&file).unwrap_or_default();
-        let count = Self::count_versions(&versions);
 
-        let remote_versions = self.fetch_remote_versions(count).unwrap_or_else(|_| {
-            warn!(
-                self.logger,
-                "Failed to fetch versions from package.elm-lang.org"
-            );
-            HashMap::new()
-        });
-        for (pkg, vs) in &remote_versions {
-            let entry = versions.entry(pkg.clone()).or_insert_with(Vec::new);
-            entry.extend(vs);
+        if !self.offline {
+            let count = Self::count_versions(&versions);
+
+            let remote_versions = self.fetch_remote_versions(count).unwrap_or_else(|_| {
+                warn!(
+                    self.logger,
+                    "Failed to fetch versions from package.elm-lang.org"
+                );
+                HashMap::new()
+            });
+            for (pkg, vs) in &remote_versions {
+                let entry = versions.entry(pkg.clone()).or_insert_with(Vec::new);
+                entry.extend(vs);
+            }
+
+            self.save_cached_versions(&file, &versions)?;
         }
 
-        self.save_cached_versions(&file, &versions)?;
         file.unlock()?;
 
         let mut versions: HashMap<PackageId, Vec<Version>> = versions
@@ -165,8 +172,8 @@ impl Retriever {
         &self,
         cache_file: &File,
     ) -> Result<HashMap<package::Name, Vec<Version>>, Error> {
-        let reader = BufReader::new(cache_file);
-        let versions: HashMap<package::Name, Vec<Version>> = bincode::deserialize_from(reader)?;
+        let versions: HashMap<package::Name, Vec<Version>> = bincode::deserialize_from(cache_file)?;
+
         Ok(versions)
     }
 
@@ -201,6 +208,7 @@ impl Retriever {
         from: usize,
     ) -> Result<HashMap<package::Name, Vec<Version>>, Error> {
         debug!(self.logger, "Fetching versions since {}", from);
+
         let url = format!("https://package.elm-lang.org/all-packages/since/{}", from);
         let response = isahc::get(url)?;
 
@@ -236,17 +244,46 @@ impl Retriever {
             "Fetching dependencies for {}@{}", pkg.id, pkg.version
         );
 
+        if self.offline {
+            warn!(self.logger, "Attempting to fetch deps for {:#?}", pkg);
+            bail!("I need to fetch dependencies from package.elm-lang.org but I'm working in offline mode!");
+        }
+
         let url = format!(
             "https://package.elm-lang.org/packages/{}/{}/elm.json",
             pkg.id, pkg.version
         );
         let response = isahc::get(url)?;
         let info: package::Package = serde_json::from_reader(response.into_body())?;
+
+        let path = Self::cached_json_path(&pkg)?;
+
+        DirBuilder::new()
+            .recursive(true)
+            .create(path.parent().unwrap())
+            .map_err(|_| {
+                format_err!(
+                    "I tried creating a new folder to cache an elm.json file in but failed!"
+                )
+            })?;
+        let file = OpenOptions::new()
+            .write(true)
+            .read(true)
+            .create(true)
+            .open(path.clone())
+            .map_err(|_| {
+                format_err!("I tried caching an elm.json file here {} but couldn't create or open that location!", path.to_string_lossy())
+            })?;
+        let mut serializer = serde_json::Serializer::new(file);
+        info.serialize(&mut serializer)?;
+
         Ok(self.deps_from_package(&pkg, &info))
     }
 
-    fn read_cached_deps(
+    fn read_stored_deps(
         &mut self,
+        elm_version: &str,
+        extra: &str,
         pkg: &Summary,
     ) -> Result<Vec<Incompatibility<PackageId>>, Error> {
         debug!(
@@ -256,11 +293,37 @@ impl Retriever {
 
         let mut p_path = Self::packages_path()?;
         p_path.push(format!(
-            "0.19.0/package/{}/{}/elm.json",
-            pkg.id, pkg.version
+            "{}/package{}/{}/{}/elm.json",
+            elm_version, extra, pkg.id, pkg.version
         ));
 
         let file = File::open(p_path)?;
+        let reader = BufReader::new(file);
+        let info: package::Package = serde_json::from_reader(reader)?;
+
+        Ok(self.deps_from_package(&pkg, &info))
+    }
+
+    fn cached_json_path(pkg: &Summary) -> Result<PathBuf, Error> {
+        let mut p_path = Self::packages_path()?;
+        p_path.push(format!(
+            "elm-json/packages/{}/{}/elm.json",
+            pkg.id, pkg.version
+        ));
+        Ok(p_path)
+    }
+
+    fn read_cached_deps(
+        &mut self,
+        pkg: &Summary,
+    ) -> Result<Vec<Incompatibility<PackageId>>, Error> {
+        debug!(
+            self.logger,
+            "Attempting to read cached deps for {}@{}", pkg.id, pkg.version
+        );
+
+        let path = Self::cached_json_path(&pkg)?;
+        let file = File::open(path)?;
         let reader = BufReader::new(file);
         let info: package::Package = serde_json::from_reader(reader)?;
 
@@ -340,6 +403,8 @@ impl retriever::Retriever for Retriever {
             .get(&pkg)
             .cloned()
             .ok_or(())
+            .or_else(|_| self.read_stored_deps("0.19.0", "", &pkg))
+            .or_else(|_| self.read_stored_deps("0.19.1", "s", &pkg))
             .or_else(|_| self.read_cached_deps(&pkg))
             .or_else(|_| self.fetch_deps(&pkg))
     }

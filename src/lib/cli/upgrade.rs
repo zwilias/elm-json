@@ -11,12 +11,21 @@ use colored::Colorize;
 use failure::ResultExt;
 use slog::Logger;
 
-pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<()> {
-    util::with_elm_json(&matches, &logger, upgrade_application, |_, _, _| {
-        Err(ErrorKind::NotSupported.into())
-    })
+pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
+    util::with_elm_json(
+        &matches,
+        offline,
+        &logger,
+        upgrade_application,
+        |_, _, _, _| Err(ErrorKind::NotSupported.into()),
+    )
 }
-fn upgrade_application(matches: &ArgMatches, logger: &Logger, info: Application) -> Result<()> {
+fn upgrade_application(
+    matches: &ArgMatches,
+    offline: bool,
+    logger: &Logger,
+    info: Application,
+) -> Result<()> {
     let strictness = if matches.is_present("unsafe") {
         semver::Strictness::Unsafe
     } else {
@@ -25,7 +34,7 @@ fn upgrade_application(matches: &ArgMatches, logger: &Logger, info: Application)
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(&logger, &elm_version.into()).context(ErrorKind::Unknown)?;
+        Retriever::new(&logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
 
     retriever.add_deps(&info.dependencies(&strictness));
     retriever.add_deps(&info.test_dependencies(&strictness));

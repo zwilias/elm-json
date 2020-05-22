@@ -9,16 +9,21 @@ use clap::ArgMatches;
 use failure::ResultExt;
 use slog::Logger;
 
-pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<()> {
-    util::with_elm_json(&matches, &logger, solve_application, solve_package)
+pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
+    util::with_elm_json(&matches, offline, &logger, solve_application, solve_package)
 }
 
-fn solve_application(matches: &ArgMatches, logger: &Logger, info: Application) -> Result<()> {
+fn solve_application(
+    matches: &ArgMatches,
+    offline: bool,
+    logger: &Logger,
+    info: Application,
+) -> Result<()> {
     let deps = &info.dependencies(&semver::Strictness::Exact);
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(&logger, &elm_version.into()).context(ErrorKind::Unknown)?;
+        Retriever::new(&logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
     let extras = util::add_extra_deps(&matches, &mut retriever);
 
     retriever.add_preferred_versions(
@@ -55,15 +60,20 @@ fn solve_application(matches: &ArgMatches, logger: &Logger, info: Application) -
     Ok(())
 }
 
-fn solve_package(matches: &ArgMatches, logger: &Logger, info: Package) -> Result<()> {
+fn solve_package(
+    matches: &ArgMatches,
+    offline: bool,
+    logger: &Logger,
+    info: Package,
+) -> Result<()> {
     let deps = if matches.is_present("test") {
         info.all_dependencies().context(ErrorKind::InvalidElmJson)?
     } else {
         info.dependencies()
     };
 
-    let mut retriever =
-        Retriever::new(&logger, &info.elm_version().to_constraint()).context(ErrorKind::Unknown)?;
+    let mut retriever = Retriever::new(&logger, &info.elm_version().to_constraint(), offline)
+        .context(ErrorKind::Unknown)?;
 
     if matches.is_present("minimize") {
         retriever.minimize();
