@@ -4,9 +4,9 @@ use crate::{
     solver::{incompat::Incompatibility, retriever, summary},
 };
 use bincode;
-use chttp;
 use failure::{bail, format_err, Error};
 use fs2::FileExt;
+use isahc;
 use slog::{debug, o, warn, Logger};
 use std::{
     collections::HashMap,
@@ -204,7 +204,7 @@ impl Retriever {
     ) -> Result<HashMap<package::Name, Vec<Version>>, Error> {
         debug!(self.logger, "Fetching versions since {}", from);
         let url = format!("https://package.elm-lang.org/all-packages/since/{}", from);
-        let response = chttp::get(url)?;
+        let response = isahc::get(url)?;
 
         let versions: Vec<String> = serde_json::from_reader(response.into_body())?;
         let mut res: HashMap<package::Name, Vec<Version>> = HashMap::new();
@@ -242,7 +242,7 @@ impl Retriever {
             "https://package.elm-lang.org/packages/{}/{}/elm.json",
             pkg.id, pkg.version
         );
-        let response = chttp::get(url)?;
+        let response = isahc::get(url)?;
         let info: package::Package = serde_json::from_reader(response.into_body())?;
         Ok(self.deps_from_package(&pkg, &info))
     }

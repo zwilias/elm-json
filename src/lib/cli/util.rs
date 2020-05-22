@@ -5,7 +5,7 @@ use crate::{
     semver,
 };
 use clap::ArgMatches;
-use dialoguer::Confirmation;
+use dialoguer::Confirm;
 use failure::{format_err, ResultExt};
 use serde::ser::Serialize;
 use slog::Logger;
@@ -15,8 +15,8 @@ pub fn confirm(prompt: &str, matches: &ArgMatches) -> Result<bool> {
     if matches.is_present("yes") {
         return Ok(true);
     }
-    Confirmation::new()
-        .with_text(prompt)
+    Confirm::new()
+        .with_prompt(prompt)
         .interact()
         .context(ErrorKind::Unknown)
         .map_err(convert::Into::into)
