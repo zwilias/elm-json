@@ -658,9 +658,9 @@ where
     fn register(&mut self, a: &Assignment<R::PackageId>) {
         match a.ty() {
             AssignmentType::Decision { version } => {
-                self.decisions.insert(a.pkg().clone(), version.clone());
+                self.decisions.insert(a.pkg().clone(), *version);
                 self.derivations
-                    .insert(a.pkg().clone(), (true, version.clone().into()));
+                    .insert(a.pkg().clone(), (true, (*version).into()));
             }
             AssignmentType::Derivation {
                 cause: _cause,
