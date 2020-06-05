@@ -33,7 +33,7 @@ possible, to prevent downloading things you may already have on your filesystem.
       * [For tooling: elm-json solve](#for-tooling-elm-json-solve)
       * [Generating shell completions: elm-json completions](#generating-shell-completions-elm-json-completions)
 
-<!-- Added by: ilias, at: Fri Dec  6 17:30:36 CET 2019 -->
+<!-- Added by: ilias, at: Fri Jun  5 19:07:47 CEST 2020 -->
 
 <!--te-->
 
@@ -60,6 +60,8 @@ USAGE:
 
 FLAGS:
     -h, --help       Prints help information
+        --offline    Enable offline mode, which means no HTTP traffic will
+                     happen
     -V, --version    Prints version information
     -v, --verbose    Sets the level of verbosity
 
@@ -67,6 +69,7 @@ SUBCOMMANDS:
     help         Prints this message or the help of the given subcommand(s)
     install      Install a package
     new          Create a new elm.json file
+    tree         List entire dependency graph as a tree
     uninstall    Uninstall a package
     upgrade      Bring your dependencies up to date
 ```
