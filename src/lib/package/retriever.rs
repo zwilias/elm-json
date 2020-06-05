@@ -135,12 +135,18 @@ impl Retriever {
                 );
                 HashMap::new()
             });
+
+            let mut changed = false;
+
             for (pkg, vs) in &remote_versions {
                 let entry = versions.entry(pkg.clone()).or_insert_with(Vec::new);
                 entry.extend(vs);
+                changed = true;
             }
 
-            self.save_cached_versions(&file, &versions)?;
+            if changed {
+                self.save_cached_versions(&file, &versions)?;
+            }
         }
 
         file.unlock()?;
