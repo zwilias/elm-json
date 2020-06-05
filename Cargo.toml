@@ -21,7 +21,7 @@ colored = "1.9"
 dialoguer = "0.6"
 dirs = "2.0"
 fs2 = "0.4"
-isahc = "0.9"
+isahc = { version = "0.9", features = ["static-ssl"] }
 
 [dev-dependencies]
 assert_cmd = "0.11"
@@ -41,4 +41,4 @@ lto = true
 panic = 'abort'
 
 [patch.crates-io]
-isahc = { git = "https://github.com/zwilias/isahc.git", features = ["static-ssl"] }
+isahc = { git = "https://github.com/zwilias/isahc.git" }
