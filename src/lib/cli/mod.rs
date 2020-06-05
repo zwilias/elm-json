@@ -27,6 +27,12 @@ pub fn build() -> App<'static, 'static> {
                 .multiple(true)
                 .help("Sets the level of verbosity"),
         )
+        .arg(
+            Arg::with_name("offline")
+                .long("offline")
+                .multiple(false)
+                .help("Enable offline mode, which means no HTTP traffic will happen"),
+        )
         .subcommand(
             SubCommand::with_name("upgrade")
                 .about("Bring your dependencies up to date")

@@ -16,13 +16,24 @@ use petgraph::{self, visit::IntoNodeReferences};
 use slog::Logger;
 use std::collections::BTreeMap;
 
-pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<()> {
-    util::with_elm_json(&matches, &logger, install_application, install_package)
+pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
+    util::with_elm_json(
+        &matches,
+        offline,
+        &logger,
+        install_application,
+        install_package,
+    )
 }
 
-fn install_package(matches: &ArgMatches, logger: &Logger, info: Package) -> Result<()> {
-    let mut retriever =
-        Retriever::new(&logger, &info.elm_version().to_constraint()).context(ErrorKind::Unknown)?;
+fn install_package(
+    matches: &ArgMatches,
+    offline: bool,
+    logger: &Logger,
+    info: Package,
+) -> Result<()> {
+    let mut retriever = Retriever::new(&logger, &info.elm_version().to_constraint(), offline)
+        .context(ErrorKind::Unknown)?;
 
     let deps = info.all_dependencies().context(ErrorKind::InvalidElmJson)?;
     retriever.add_deps(&deps);
@@ -82,12 +93,17 @@ fn install_package(matches: &ArgMatches, logger: &Logger, info: Package) -> Resu
     Ok(())
 }
 
-fn install_application(matches: &ArgMatches, logger: &Logger, info: Application) -> Result<()> {
+fn install_application(
+    matches: &ArgMatches,
+    offline: bool,
+    logger: &Logger,
+    info: Application,
+) -> Result<()> {
     let strictness = semver::Strictness::Exact;
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(&logger, &elm_version.into()).context(ErrorKind::Unknown)?;
+        Retriever::new(&logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
 
     let extras = util::add_extra_deps(matches, &mut retriever);
 

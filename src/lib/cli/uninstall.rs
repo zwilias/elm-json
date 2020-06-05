@@ -12,16 +12,27 @@ use failure::ResultExt;
 use slog::Logger;
 use std::collections::{BTreeMap, HashSet};
 
-pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<()> {
-    util::with_elm_json(&matches, &logger, uninstall_application, uninstall_package)
+pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
+    util::with_elm_json(
+        &matches,
+        offline,
+        &logger,
+        uninstall_application,
+        uninstall_package,
+    )
 }
 
-fn uninstall_application(matches: &ArgMatches, logger: &Logger, info: Application) -> Result<()> {
+fn uninstall_application(
+    matches: &ArgMatches,
+    offline: bool,
+    logger: &Logger,
+    info: Application,
+) -> Result<()> {
     let strictness = semver::Strictness::Exact;
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(&logger, &elm_version.into()).context(ErrorKind::Unknown)?;
+        Retriever::new(&logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
 
     let extras: HashSet<_> = matches
         .values_of_lossy("extra")
@@ -109,7 +120,12 @@ fn uninstall_application(matches: &ArgMatches, logger: &Logger, info: Applicatio
     Ok(())
 }
 
-fn uninstall_package(matches: &ArgMatches, _logger: &Logger, info: Package) -> Result<()> {
+fn uninstall_package(
+    matches: &ArgMatches,
+    _offline: bool,
+    _logger: &Logger,
+    info: Package,
+) -> Result<()> {
     let extras: HashSet<_> = matches
         .values_of_lossy("extra")
         .unwrap_or_else(Vec::new)

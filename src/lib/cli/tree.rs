@@ -13,16 +13,21 @@ use petgraph::{self, visit::IntoNodeReferences};
 use slog::Logger;
 use std::collections::HashSet;
 
-pub fn run(matches: &ArgMatches, logger: &Logger) -> Result<()> {
-    util::with_elm_json(&matches, &logger, tree_application, tree_package)
+pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
+    util::with_elm_json(&matches, offline, &logger, tree_application, tree_package)
 }
 
-fn tree_application(matches: &ArgMatches, logger: &Logger, info: Application) -> Result<()> {
+fn tree_application(
+    matches: &ArgMatches,
+    offline: bool,
+    logger: &Logger,
+    info: Application,
+) -> Result<()> {
     let mut deps: Vec<_> = info.dependencies(&semver::Strictness::Exact);
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(&logger, &elm_version.into()).context(ErrorKind::Unknown)?;
+        Retriever::new(&logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
 
     retriever.add_preferred_versions(
         info.dependencies
@@ -51,15 +56,15 @@ fn tree_application(matches: &ArgMatches, logger: &Logger, info: Application) ->
     Ok(())
 }
 
-fn tree_package(matches: &ArgMatches, logger: &Logger, info: Package) -> Result<()> {
+fn tree_package(matches: &ArgMatches, offline: bool, logger: &Logger, info: Package) -> Result<()> {
     let deps = if matches.is_present("test") {
         info.all_dependencies().context(ErrorKind::InvalidElmJson)?
     } else {
         info.dependencies()
     };
 
-    let mut retriever =
-        Retriever::new(&logger, &info.elm_version().to_constraint()).context(ErrorKind::Unknown)?;
+    let mut retriever = Retriever::new(&logger, &info.elm_version().to_constraint(), offline)
+        .context(ErrorKind::Unknown)?;
     retriever.add_deps(&deps);
 
     Resolver::new(&logger, &mut retriever)

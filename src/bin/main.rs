@@ -32,16 +32,18 @@ fn run() -> cli::Result<()> {
         _ => slog::Level::Trace,
     };
 
+    let offline = matches.is_present("offline");
+
     let logger = make_logger(min_log_level);
 
     match matches.subcommand() {
-        ("solve", Some(matches)) => cli::solve::run(matches, &logger),
-        ("upgrade", Some(matches)) => cli::upgrade::run(matches, &logger),
-        ("install", Some(matches)) => cli::install::run(matches, &logger),
-        ("uninstall", Some(matches)) => cli::uninstall::run(matches, &logger),
+        ("solve", Some(matches)) => cli::solve::run(matches, offline, &logger),
+        ("upgrade", Some(matches)) => cli::upgrade::run(matches, offline, &logger),
+        ("install", Some(matches)) => cli::install::run(matches, offline, &logger),
+        ("uninstall", Some(matches)) => cli::uninstall::run(matches, offline, &logger),
         ("new", Some(matches)) => cli::new::run(matches, &logger),
         ("completions", Some(matches)) => cli::completions::run(matches),
-        ("tree", Some(matches)) => cli::tree::run(matches, &logger),
+        ("tree", Some(matches)) => cli::tree::run(matches, offline, &logger),
         (cmd, matches) => panic!(
             "Received command {} with matches {:#?} but I don't know how to handle this",
             cmd, matches
