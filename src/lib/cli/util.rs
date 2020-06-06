@@ -9,7 +9,12 @@ use dialoguer::Confirm;
 use failure::{format_err, ResultExt};
 use serde::ser::Serialize;
 use slog::Logger;
-use std::{collections::HashSet, convert, fs::File, io::Write};
+use std::{
+    collections::HashSet,
+    convert,
+    fs::File,
+    io::{BufWriter, Write},
+};
 
 pub fn confirm(prompt: &str, matches: &ArgMatches) -> Result<bool> {
     if matches.is_present("yes") {
@@ -48,13 +53,15 @@ fn read_elm_json(matches: &ArgMatches) -> Result<Project> {
 
 pub fn write_elm_json(project: &Project, matches: &ArgMatches) -> Result<()> {
     let path = matches.value_of("INPUT").unwrap();
-    let mut file = File::create(path).context(ErrorKind::UnwritableElmJson)?;
+    let file = File::create(path).context(ErrorKind::UnwritableElmJson)?;
+    let mut writer = BufWriter::new(file);
     let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
-    let mut serializer = serde_json::Serializer::with_formatter(&file, formatter);
+    let mut serializer = serde_json::Serializer::with_formatter(writer.get_ref(), formatter);
     project
         .serialize(&mut serializer)
         .context(ErrorKind::Unknown)?;
-    writeln!(file).context(ErrorKind::Unknown)?;
+    writer.write(b"\n").context(ErrorKind::UnwritableElmJson)?;
+    writer.flush().context(ErrorKind::UnwritableElmJson)?;
     Ok(())
 }
 
