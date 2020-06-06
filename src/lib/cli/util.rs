@@ -54,12 +54,13 @@ fn read_elm_json(matches: &ArgMatches) -> Result<Project> {
 pub fn write_elm_json(project: &Project, matches: &ArgMatches) -> Result<()> {
     let path = matches.value_of("INPUT").unwrap();
     let file = File::create(path).context(ErrorKind::UnwritableElmJson)?;
-    let mut writer = BufWriter::new(file);
+    let writer = BufWriter::new(file);
     let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
-    let mut serializer = serde_json::Serializer::with_formatter(writer.get_ref(), formatter);
+    let mut serializer = serde_json::Serializer::with_formatter(writer, formatter);
     project
         .serialize(&mut serializer)
         .context(ErrorKind::Unknown)?;
+    let mut writer = serializer.into_inner();
     writer.write(b"\n").context(ErrorKind::UnwritableElmJson)?;
     writer.flush().context(ErrorKind::UnwritableElmJson)?;
     Ok(())
