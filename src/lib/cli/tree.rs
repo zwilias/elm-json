@@ -1,6 +1,9 @@
 use super::{util, ErrorKind, Result};
 use crate::{
-    package::retriever::{self, Retriever},
+    package::{
+        self,
+        retriever::{self, Retriever},
+    },
     project::{Application, Package},
     semver,
     solver::{self, Resolver},
@@ -12,6 +15,7 @@ use itertools::Itertools;
 use petgraph::{self, visit::IntoNodeReferences};
 use slog::Logger;
 use std::collections::HashSet;
+use std::iter::FromIterator;
 
 pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
     util::with_elm_json(&matches, offline, &logger, tree_application, tree_package)
@@ -51,7 +55,7 @@ fn tree_application(
 
     Resolver::new(&logger, &mut retriever)
         .solve()
-        .map(|v| show_tree(&v))
+        .map(|v| show_tree(&v, matches.value_of("package")))
         .context(ErrorKind::NoResolution)?;
     Ok(())
 }
@@ -69,13 +73,39 @@ fn tree_package(matches: &ArgMatches, offline: bool, logger: &Logger, info: Pack
 
     Resolver::new(&logger, &mut retriever)
         .solve()
-        .map(|v| show_tree(&v))
+        .map(|v| show_tree(&v, matches.value_of("package")))
         .context(ErrorKind::NoResolution)?;
     Ok(())
 }
 
-fn show_tree(g: &solver::Graph<solver::Summary<retriever::PackageId>>) {
+fn show_tree(g: &solver::Graph<solver::Summary<retriever::PackageId>>, target: Option<&str>) {
     let root = g.node_references().next().unwrap().0;
+    if let Some(target) = target {
+        let name: package::Name = target.parse().expect("Invalid name parameter");
+
+        if let Some(target) = g.node_indices().find(|i| g[*i].id.is(&name)) {
+            let paths: Vec<Vec<_>> =
+                petgraph::algo::all_simple_paths(g, root, target, 0, None).collect();
+            let nodes: HashSet<_> = HashSet::from_iter(paths.concat());
+            let mut g = g.clone();
+            g.retain_nodes(|_, n| nodes.contains(&n));
+            print_graph(&g, root)
+        } else {
+            println!(
+                "Could not find {} in direct or indirect dependencies.",
+                target
+            );
+            return;
+        }
+    } else {
+        print_graph(g, root)
+    }
+}
+
+fn print_graph(
+    g: &solver::Graph<solver::Summary<retriever::PackageId>>,
+    root: petgraph::graph::NodeIndex,
+) {
     let mut visited: HashSet<usize> = HashSet::new();
     println!("\nproject");
 
@@ -104,7 +134,7 @@ fn visit_children(
 
     while let Some(idx) = graph_iter.next() {
         let item = &g[idx];
-        let repeated = visited.contains(&idx.index());
+        let repeated = visited.contains(&idx.index()) && g.edges(idx).next().is_some();
         visited.insert(idx.index());
 
         if let retriever::PackageId::Pkg(name) = &item.id {

@@ -111,8 +111,16 @@ pub fn build() -> App<'static, 'static> {
                         .long("test"),
                 )
                 .arg(
+                    Arg::with_name("package")
+                        .help("Limit output to show path to some (indirect) dependency")
+                        .takes_value(true)
+                        .value_name("PACKAGE")
+                        .validator(util::valid_package),
+                )
+                .arg(
                     Arg::with_name("INPUT")
                         .help("The elm.json file to solve")
+                        .last(true)
                         .default_value("elm.json"),
                 ),
         )

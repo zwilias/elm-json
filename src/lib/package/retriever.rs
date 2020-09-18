@@ -60,6 +60,16 @@ impl From<package::Name> for PackageId {
     }
 }
 
+impl PackageId {
+    pub fn is(&self, n: &package::Name) -> bool {
+        match self {
+            PackageId::Root => false,
+            PackageId::Elm => false,
+            PackageId::Pkg(name) => name == n,
+        }
+    }
+}
+
 impl Retriever {
     pub fn new(logger: &Logger, elm_version: &Constraint, offline: bool) -> Result<Self, Error> {
         let mut deps_cache = HashMap::new();
