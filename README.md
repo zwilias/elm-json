@@ -245,7 +245,7 @@ This is very rudimentary right now.
 
 ```
 USAGE:
-    elm-json tree [FLAGS] [INPUT]
+    elm-json tree [FLAGS] [PACKAGE] [-- <INPUT>]
 
 FLAGS:
     -h, --help       Prints help information
@@ -253,7 +253,8 @@ FLAGS:
     -V, --version    Prints version information
 
 ARGS:
-    <INPUT>    The elm.json file to solve [default: elm.json]
+    <PACKAGE>    Limit output to show path to some (indirect) dependency
+    <INPUT>      The elm.json file to solve [default: elm.json]
 ```
 
 Lists the entire dependency graph (with test-dependencies included when `--test`
@@ -290,6 +291,9 @@ project
 Items marked with * have their dependencies ommitted since they've already
 appeared in the output.
 ```
+
+Specifying a package-name will filter the tree so only paths leading to the
+specified package, in direct and indirect dependencies, will be shown.
 
 ## For tooling: `elm-json solve`
 
