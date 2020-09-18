@@ -94,8 +94,7 @@ fn show_tree(g: &solver::Graph<solver::Summary<retriever::PackageId>>, target: O
             println!(
                 "Could not find {} in direct or indirect dependencies.",
                 target
-            );
-            return;
+            )
         }
     } else {
         print_graph(g, root)
