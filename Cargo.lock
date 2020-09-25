@@ -324,7 +324,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "elm-json"
-version = "0.2.8"
+version = "0.2.9"
 dependencies = [
  "assert_cmd 0.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "assert_fs 0.11.3 (registry+https://github.com/rust-lang/crates.io-index)",
