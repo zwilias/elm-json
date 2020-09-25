@@ -4,9 +4,12 @@ use std::alloc::System;
 #[global_allocator]
 static A: System = System;
 
+use cli::ErrorKind;
 use colored::Colorize;
+use console;
+use ctrlc;
 use elm_json::cli;
-use failure::Fail;
+use failure::{Fail, ResultExt};
 use slog::{o, Drain, Logger};
 
 fn main() {
@@ -23,6 +26,12 @@ fn main() {
 }
 
 fn run() -> cli::Result<()> {
+    ctrlc::set_handler(move || {
+        let term = console::Term::stdout();
+        let _ = term.show_cursor();
+    })
+    .context(ErrorKind::Unknown)?;
+
     let matches = cli::build().get_matches();
 
     let min_log_level = match matches.occurrences_of("verbose") {
