@@ -6,8 +6,6 @@ static A: System = System;
 
 use cli::ErrorKind;
 use colored::Colorize;
-use console;
-use ctrlc;
 use elm_json::cli;
 use failure::{Fail, ResultExt};
 use slog::{o, Drain, Logger};
