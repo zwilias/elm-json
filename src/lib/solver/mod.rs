@@ -526,7 +526,7 @@ where
                         out.push_str(&left.show());
                         out.push_str(" (");
                         out.push_str(&l.to_string());
-                        out.push_str(")");
+                        out.push(')');
                     }
                     (None, Some(r)) => {
                         self.pp_err_recur(right_ix, ics, linum, cur_linum, out);
@@ -534,7 +534,7 @@ where
                         out.push_str(&right.show());
                         out.push_str(" (");
                         out.push_str(&r.to_string());
-                        out.push_str(")");
+                        out.push(')');
                     }
                     (None, None) => {
                         match (
@@ -564,9 +564,9 @@ where
                                     out.push(')');
                                     linum.insert(icix, *cur_linum);
                                     *cur_linum += 1;
-                                    out.push_str("\n");
+                                    out.push('\n');
                                 }
-                                out.push_str("\n");
+                                out.push('\n');
                                 self.pp_err_recur(right_ix, ics, linum, cur_linum, out);
 
                                 // TODO: This just feels wrong
@@ -578,7 +578,7 @@ where
                                 out.push(')');
                                 linum.insert(icix, *cur_linum);
                                 *cur_linum += 1;
-                                out.push_str("\n");
+                                out.push('\n');
 
                                 out.push_str("\nAnd because ");
                                 out.push_str(&left.show());
@@ -652,7 +652,7 @@ where
             linum.insert(icix, *cur_linum);
             *cur_linum += 1;
         }
-        out.push_str("\n");
+        out.push('\n');
     }
 
     fn register(&mut self, a: &Assignment<R::PackageId>) {

@@ -121,13 +121,7 @@ fn visit_children(
 ) {
     let mut graph_iter = g
         .neighbors_directed(root, petgraph::Direction::Outgoing)
-        .filter(|&idx| {
-            if let retriever::PackageId::Pkg(_) = &g[idx].id {
-                true
-            } else {
-                false
-            }
-        })
+        .filter(|&idx| matches!(&g[idx].id, retriever::PackageId::Pkg(_)))
         .sorted_by(|&a, &b| Ord::cmp(&g[a].id, &g[b].id))
         .peekable();
 
