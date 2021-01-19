@@ -15,6 +15,7 @@ module.exports = binwrap({
     urls: {
         "darwin-arm64": root + "-x86_64-apple-darwin.tar.gz",
         "darwin-x64": root + "-x86_64-apple-darwin.tar.gz",
+        "freebsd-x64": root + "-x86_64-freebsd.tar.gz",
         "linux-x64": root + "-x86_64-unknown-linux-musl.tar.gz",
         "linux-arm": root + "-armv7-unknown-linux-musleabihf.tar.gz",
         "linux-arm64": root + "-armv7-unknown-linux-musleabihf.tar.gz",
