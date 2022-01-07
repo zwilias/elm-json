@@ -14,13 +14,13 @@ use colored::Colorize;
 use failure::ResultExt;
 use petgraph::{self, visit::IntoNodeReferences};
 use slog::Logger;
-use std::collections::BTreeMap;
+use std::collections::{btree_map::Keys, BTreeMap};
 
 pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
     util::with_elm_json(
-        &matches,
+        matches,
         offline,
-        &logger,
+        logger,
         install_application,
         install_package,
     )
@@ -32,20 +32,20 @@ fn install_package(
     logger: &Logger,
     info: Package,
 ) -> Result<()> {
-    let mut retriever = Retriever::new(&logger, &info.elm_version().to_constraint(), offline)
+    let mut retriever = Retriever::new(logger, &info.elm_version().to_constraint(), offline)
         .context(ErrorKind::Unknown)?;
 
     let deps = info.all_dependencies().context(ErrorKind::InvalidElmJson)?;
     retriever.add_deps(&deps);
     let extras = util::add_extra_deps(matches, &mut retriever);
 
-    let res = Resolver::new(&logger, &mut retriever)
+    let res = Resolver::new(logger, &mut retriever)
         .solve()
         .context(ErrorKind::NoResolution)?;
 
     let mut deps: BTreeMap<_, package::Range> = BTreeMap::new();
     let mut test_deps: BTreeMap<_, package::Range> = BTreeMap::new();
-    let direct_dep_names: Vec<_> = info.dependencies.keys().cloned().collect();
+    let direct_dep_names: &mut Keys<_, _> = &mut info.dependencies.keys();
     let root = res.node_references().next().unwrap().0;
     let for_test = matches.is_present("test");
 
@@ -59,7 +59,7 @@ fn install_package(
                 } else {
                     deps.insert(dep.clone(), r);
                 }
-            } else if direct_dep_names.contains(&dep) {
+            } else if direct_dep_names.any(|v| v == &dep) {
                 deps.insert(dep.clone(), info.dependencies[&dep]);
             } else {
                 test_deps.insert(dep.clone(), info.test_dependencies[&dep]);
@@ -83,8 +83,8 @@ fn install_package(
 
     let updated = Project::Package(info.with_deps(deps, test_deps));
 
-    if util::confirm("Should I make these changes?", &matches)? {
-        util::write_elm_json(&updated, &matches)?;
+    if util::confirm("Should I make these changes?", matches)? {
+        util::write_elm_json(&updated, matches)?;
         println!("Saved updated elm.json!");
     } else {
         println!("Aborting!");
@@ -103,7 +103,7 @@ fn install_application(
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(&logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
+        Retriever::new(logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
 
     let extras = util::add_extra_deps(matches, &mut retriever);
 
@@ -135,7 +135,7 @@ fn install_application(
             .filter(|(k, _)| !extras.contains(k)),
     );
 
-    let res = Resolver::new(&logger, &mut retriever)
+    let res = Resolver::new(logger, &mut retriever)
         .solve()
         .context(ErrorKind::NoResolution)?;
 
@@ -183,8 +183,8 @@ fn install_application(
     );
 
     let updated = Project::Application(info.with(deps.0, deps.1));
-    if util::confirm("Should I make these changes?", &matches)? {
-        util::write_elm_json(&updated, &matches)?;
+    if util::confirm("Should I make these changes?", matches)? {
+        util::write_elm_json(&updated, matches)?;
         println!("Saved updated elm.json!");
     } else {
         println!("Aborting!");

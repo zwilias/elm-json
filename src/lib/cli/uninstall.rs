@@ -14,9 +14,9 @@ use std::collections::{BTreeMap, HashSet};
 
 pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
     util::with_elm_json(
-        &matches,
+        matches,
         offline,
-        &logger,
+        logger,
         uninstall_application,
         uninstall_package,
     )
@@ -32,7 +32,7 @@ fn uninstall_application(
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(&logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
+        Retriever::new(logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
 
     let extras: HashSet<_> = matches
         .values_of_lossy("extra")
@@ -69,7 +69,7 @@ fn uninstall_application(
             .filter(|(k, _)| !extras.contains(k)),
     );
 
-    let res = Resolver::new(&logger, &mut retriever)
+    let res = Resolver::new(logger, &mut retriever)
         .solve()
         .context(ErrorKind::NoResolution)?;
 
@@ -110,8 +110,8 @@ fn uninstall_application(
     );
 
     let updated = Project::Application(info.with(deps.0, deps.1));
-    if util::confirm("Should I make these changes?", &matches)? {
-        util::write_elm_json(&updated, &matches)?;
+    if util::confirm("Should I make these changes?", matches)? {
+        util::write_elm_json(&updated, matches)?;
         println!("Saved updated elm.json!");
     } else {
         println!("Aborting!");
@@ -156,8 +156,8 @@ fn uninstall_package(
     diff::show(diff::Kind::Test, &info.test_dependencies, &new_test_deps);
 
     let updated = Project::Package(info.with_deps(new_deps, new_test_deps));
-    if util::confirm("Should I make these changes?", &matches)? {
-        util::write_elm_json(&updated, &matches)?;
+    if util::confirm("Should I make these changes?", matches)? {
+        util::write_elm_json(&updated, matches)?;
         println!("Saved!");
     } else {
         println!("Aborting!");

@@ -158,7 +158,7 @@ impl Interval {
                 }
             }
             (Interval::Open(a), Interval::Open(b)) | (Interval::Closed(a), Interval::Closed(b)) => {
-                a.cmp(&b)
+                a.cmp(b)
             }
             (Interval::Open(a), Interval::Closed(b)) => {
                 if a == b {
@@ -168,7 +168,7 @@ impl Interval {
                         cmp::Ordering::Less
                     }
                 } else {
-                    a.cmp(&b)
+                    a.cmp(b)
                 }
             }
             (Interval::Closed(a), Interval::Open(b)) => {
@@ -179,7 +179,7 @@ impl Interval {
                         cmp::Ordering::Greater
                     }
                 } else {
-                    a.cmp(&b)
+                    a.cmp(b)
                 }
             }
         }
@@ -493,7 +493,7 @@ impl Constraint {
 
         for r in &self.set {
             for s in &other.set {
-                if let Some(r) = r.intersection(&s) {
+                if let Some(r) = r.intersection(s) {
                     set.insert(r);
                 }
             }

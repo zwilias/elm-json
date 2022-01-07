@@ -272,7 +272,7 @@ impl Retriever {
         let response = isahc::get(url)?;
         let info: package::Package = serde_json::from_reader(response.into_body())?;
 
-        let path = Self::cached_json_path(&pkg)?;
+        let path = Self::cached_json_path(pkg)?;
 
         DirBuilder::new()
             .recursive(true)
@@ -288,12 +288,15 @@ impl Retriever {
             .create(true)
             .open(path.clone())
             .map_err(|_| {
-                format_err!("I tried caching an elm.json file here {} but couldn't create or open that location!", path.to_string_lossy())
+                format_err!(
+                    "I tried an elm.json file here {} but couldn't create or open that location!",
+                    path.to_string_lossy()
+                )
             })?;
         let mut serializer = serde_json::Serializer::new(file);
         info.serialize(&mut serializer)?;
 
-        Ok(self.deps_from_package(&pkg, &info))
+        Ok(self.deps_from_package(pkg, &info))
     }
 
     fn read_stored_deps(
@@ -317,7 +320,7 @@ impl Retriever {
         let reader = BufReader::new(file);
         let info: package::Package = serde_json::from_reader(reader)?;
 
-        Ok(self.deps_from_package(&pkg, &info))
+        Ok(self.deps_from_package(pkg, &info))
     }
 
     fn cached_json_path(pkg: &Summary) -> Result<PathBuf, Error> {
@@ -338,12 +341,12 @@ impl Retriever {
             "Attempting to read cached deps for {}@{}", pkg.id, pkg.version
         );
 
-        let path = Self::cached_json_path(&pkg)?;
+        let path = Self::cached_json_path(pkg)?;
         let file = File::open(path)?;
         let reader = BufReader::new(file);
         let info: package::Package = serde_json::from_reader(reader)?;
 
-        Ok(self.deps_from_package(&pkg, &info))
+        Ok(self.deps_from_package(pkg, &info))
     }
 
     fn deps_from_package(
@@ -416,13 +419,13 @@ impl retriever::Retriever for Retriever {
             return Ok(Vec::new());
         }
         self.deps_cache
-            .get(&pkg)
+            .get(pkg)
             .cloned()
             .ok_or(())
-            .or_else(|_| self.read_stored_deps("0.19.0", "", &pkg))
-            .or_else(|_| self.read_stored_deps("0.19.1", "s", &pkg))
-            .or_else(|_| self.read_cached_deps(&pkg))
-            .or_else(|_| self.fetch_deps(&pkg))
+            .or_else(|_| self.read_stored_deps("0.19.0", "", pkg))
+            .or_else(|_| self.read_stored_deps("0.19.1", "s", pkg))
+            .or_else(|_| self.read_cached_deps(pkg))
+            .or_else(|_| self.fetch_deps(pkg))
     }
 
     fn count_versions(&self, pkg: &Self::PackageId) -> usize {

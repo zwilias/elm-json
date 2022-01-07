@@ -69,7 +69,7 @@ impl<PackageId> Assignment<PackageId> {
 
     pub fn constraint(&self) -> Constraint {
         match &self.ty {
-            AssignmentType::Decision { version } => version.clone().into(),
+            AssignmentType::Decision { version } => (*version).into(),
             AssignmentType::Derivation {
                 constraint,
                 cause: _cause,

@@ -10,7 +10,7 @@ use failure::ResultExt;
 use slog::Logger;
 
 pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
-    util::with_elm_json(&matches, offline, &logger, solve_application, solve_package)
+    util::with_elm_json(matches, offline, logger, solve_application, solve_package)
 }
 
 fn solve_application(
@@ -23,8 +23,8 @@ fn solve_application(
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(&logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
-    let extras = util::add_extra_deps(&matches, &mut retriever);
+        Retriever::new(logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
+    let extras = util::add_extra_deps(matches, &mut retriever);
 
     retriever.add_preferred_versions(
         info.dependencies
@@ -52,7 +52,7 @@ fn solve_application(
         )
     }
 
-    Resolver::new(&logger, &mut retriever)
+    Resolver::new(logger, &mut retriever)
         .solve()
         .context(ErrorKind::NoResolution)
         .and_then(|x| serde_json::to_string(&AppDependencies::from(x)).context(ErrorKind::Unknown))
@@ -72,18 +72,18 @@ fn solve_package(
         info.dependencies()
     };
 
-    let mut retriever = Retriever::new(&logger, &info.elm_version().to_constraint(), offline)
+    let mut retriever = Retriever::new(logger, &info.elm_version().to_constraint(), offline)
         .context(ErrorKind::Unknown)?;
 
     if matches.is_present("minimize") {
         retriever.minimize();
     }
 
-    let extras = util::add_extra_deps(&matches, &mut retriever);
+    let extras = util::add_extra_deps(matches, &mut retriever);
 
     retriever.add_deps(deps.iter().filter(|(k, _)| !extras.contains(k)));
 
-    Resolver::new(&logger, &mut retriever)
+    Resolver::new(logger, &mut retriever)
         .solve()
         .context(ErrorKind::NoResolution)
         .and_then(|x| serde_json::to_string(&AppDependencies::from(x)).context(ErrorKind::Unknown))

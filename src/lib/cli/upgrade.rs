@@ -13,9 +13,9 @@ use slog::Logger;
 
 pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
     util::with_elm_json(
-        &matches,
+        matches,
         offline,
-        &logger,
+        logger,
         upgrade_application,
         |_, _, _, _| Err(ErrorKind::NotSupported.into()),
     )
@@ -34,12 +34,12 @@ fn upgrade_application(
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(&logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
+        Retriever::new(logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
 
     retriever.add_deps(&info.dependencies(&strictness));
     retriever.add_deps(&info.test_dependencies(&strictness));
 
-    let res = Resolver::new(&logger, &mut retriever)
+    let res = Resolver::new(logger, &mut retriever)
         .solve()
         .context(ErrorKind::NoResolution)?;
 
@@ -79,8 +79,8 @@ fn upgrade_application(
     );
 
     let updated = Project::Application(info.with(deps.0, deps.1));
-    if util::confirm("Should I make these changes?", &matches)? {
-        util::write_elm_json(&updated, &matches)?;
+    if util::confirm("Should I make these changes?", matches)? {
+        util::write_elm_json(&updated, matches)?;
         println!("Saved updated elm.json!");
     } else {
         println!("Aborting!");

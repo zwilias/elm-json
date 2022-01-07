@@ -38,9 +38,9 @@ where
     A: FnOnce(&ArgMatches, bool, &Logger, Application) -> Result<()>,
     P: FnOnce(&ArgMatches, bool, &Logger, Package) -> Result<()>,
 {
-    match self::read_elm_json(&matches)? {
-        Project::Application(app) => run_app(&matches, offline, &logger, app),
-        Project::Package(pkg) => run_pkg(&matches, offline, &logger, pkg),
+    match self::read_elm_json(matches)? {
+        Project::Application(app) => run_app(matches, offline, logger, app),
+        Project::Package(pkg) => run_pkg(matches, offline, logger, pkg),
     }
 }
 

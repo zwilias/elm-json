@@ -64,7 +64,7 @@ pub fn reconstruct(
                     let item = &g[nx];
 
                     if let retriever::PackageId::Pkg(dep) = &item.id {
-                        if direct_names.contains(&dep) {
+                        if direct_names.contains(dep) {
                             continue;
                         }
                         indirect.insert(dep.clone(), item.version);
@@ -174,7 +174,7 @@ impl Application {
         self.dependencies
             .direct
             .iter()
-            .map(|(k, &v)| (k.clone(), Range::from(&v, &strictness)))
+            .map(|(k, &v)| (k.clone(), Range::from(&v, strictness)))
             .collect()
     }
 
@@ -182,7 +182,7 @@ impl Application {
         self.test_dependencies
             .direct
             .iter()
-            .map(|(k, &v)| (k.clone(), Range::from(&v, &strictness)))
+            .map(|(k, &v)| (k.clone(), Range::from(&v, strictness)))
             .collect()
     }
 

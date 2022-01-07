@@ -18,7 +18,7 @@ use std::collections::HashSet;
 use std::iter::FromIterator;
 
 pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
-    util::with_elm_json(&matches, offline, &logger, tree_application, tree_package)
+    util::with_elm_json(matches, offline, logger, tree_application, tree_package)
 }
 
 fn tree_application(
@@ -31,7 +31,7 @@ fn tree_application(
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(&logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
+        Retriever::new(logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
 
     retriever.add_preferred_versions(
         info.dependencies
@@ -53,7 +53,7 @@ fn tree_application(
 
     retriever.add_deps(&deps);
 
-    Resolver::new(&logger, &mut retriever)
+    Resolver::new(logger, &mut retriever)
         .solve()
         .map(|v| show_tree(&v, matches.value_of("package")))
         .context(ErrorKind::NoResolution)?;
@@ -67,11 +67,11 @@ fn tree_package(matches: &ArgMatches, offline: bool, logger: &Logger, info: Pack
         info.dependencies()
     };
 
-    let mut retriever = Retriever::new(&logger, &info.elm_version().to_constraint(), offline)
+    let mut retriever = Retriever::new(logger, &info.elm_version().to_constraint(), offline)
         .context(ErrorKind::Unknown)?;
     retriever.add_deps(&deps);
 
-    Resolver::new(&logger, &mut retriever)
+    Resolver::new(logger, &mut retriever)
         .solve()
         .map(|v| show_tree(&v, matches.value_of("package")))
         .context(ErrorKind::NoResolution)?;
@@ -108,7 +108,7 @@ fn print_graph(
     let mut visited: HashSet<usize> = HashSet::new();
     println!("\nproject");
 
-    visit_children("", &g, &mut visited, root);
+    visit_children("", g, &mut visited, root);
 
     println!("\nItems marked with {} have their dependencies ommitted since they've already\nappeared in the output.", "*".blue());
 }
@@ -116,7 +116,7 @@ fn print_graph(
 fn visit_children(
     prefix: &str,
     g: &solver::Graph<solver::Summary<retriever::PackageId>>,
-    mut visited: &mut HashSet<usize>,
+    visited: &mut HashSet<usize>,
     root: petgraph::graph::NodeIndex,
 ) {
     let mut graph_iter = g
@@ -146,7 +146,7 @@ fn visit_children(
             );
 
             if !repeated {
-                visit_children(&(prefix.to_owned() + e), &g, &mut visited, idx)
+                visit_children(&(prefix.to_owned() + e), g, visited, idx)
             }
         }
     }

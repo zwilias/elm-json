@@ -672,7 +672,7 @@ where
                         .insert(a.pkg().clone(), (*positive, constraint.clone()));
                 } else {
                     let old = self.derivations.get_mut(a.pkg()).unwrap();
-                    *old = (old.0 || *positive, old.1.intersection(&constraint));
+                    *old = (old.0 || *positive, old.1.intersection(constraint));
                 }
             }
         }
