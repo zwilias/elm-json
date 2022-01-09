@@ -8,9 +8,9 @@ use crate::{
     semver,
     solver::{self, Resolver},
 };
+use anyhow::{Context, Result};
 use clap::ArgMatches;
 use colored::Colorize;
-use anyhow::{Context, Result};
 use itertools::Itertools;
 use petgraph::{self, visit::IntoNodeReferences};
 use slog::Logger;

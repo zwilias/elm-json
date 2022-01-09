@@ -30,7 +30,6 @@ pub enum Kind {
 //     }
 // }
 
-
 // impl Error {
 //     pub fn kind(&self) -> Kind {
 //         *self.0.get_context()

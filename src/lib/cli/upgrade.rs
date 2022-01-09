@@ -1,5 +1,4 @@
 use super::{util, Kind};
-use anyhow::{Context, Result, bail};
 use crate::{
     diff,
     package::retriever::Retriever,
@@ -7,6 +6,7 @@ use crate::{
     semver,
     solver::Resolver,
 };
+use anyhow::{bail, Context, Result};
 use clap::ArgMatches;
 use colored::Colorize;
 use slog::Logger;

@@ -4,9 +4,9 @@ use crate::{
     project::{Application, Package, Project},
     semver,
 };
+use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use dialoguer::Confirm;
-use anyhow::{anyhow, Context, Result};
 use serde::ser::Serialize;
 use slog::Logger;
 use std::{
@@ -57,9 +57,7 @@ pub fn write_elm_json(project: &Project, matches: &ArgMatches) -> Result<()> {
     let writer = BufWriter::new(file);
     let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
     let mut serializer = serde_json::Serializer::with_formatter(writer, formatter);
-    project
-        .serialize(&mut serializer)
-        .context(Kind::Unknown)?;
+    project.serialize(&mut serializer).context(Kind::Unknown)?;
     let mut writer = serializer.into_inner();
     writer.write(b"\n").context(Kind::UnwritableElmJson)?;
     writer.flush().context(Kind::UnwritableElmJson)?;

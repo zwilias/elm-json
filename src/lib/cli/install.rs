@@ -9,9 +9,9 @@ use crate::{
     semver,
     solver::Resolver,
 };
+use anyhow::{Context, Result};
 use clap::ArgMatches;
 use colored::Colorize;
-use anyhow::{Result, Context};
 use petgraph::{self, visit::IntoNodeReferences};
 use slog::Logger;
 use std::collections::{btree_map::Keys, BTreeMap};

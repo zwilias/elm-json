@@ -3,7 +3,7 @@ use crate::{
     semver::{Constraint, Range, Version},
     solver::{incompat::Incompatibility, retriever, summary},
 };
-use anyhow::{bail, anyhow, Result};
+use anyhow::{anyhow, bail, Result};
 use fs2::FileExt;
 use serde::ser::Serialize;
 use slog::{debug, o, warn, Logger};
@@ -219,10 +219,7 @@ impl Retriever {
         Ok(())
     }
 
-    fn fetch_remote_versions(
-        &self,
-        from: usize,
-    ) -> Result<HashMap<package::Name, Vec<Version>>> {
+    fn fetch_remote_versions(&self, from: usize) -> Result<HashMap<package::Name, Vec<Version>>> {
         debug!(self.logger, "Fetching versions since {}", from);
 
         let url = format!("https://package.elm-lang.org/all-packages/since/{}", from);
@@ -278,9 +275,7 @@ impl Retriever {
             .recursive(true)
             .create(path.parent().unwrap())
             .map_err(|_| {
-                anyhow!(
-                    "I tried creating a new folder to cache an elm.json file in but failed!"
-                )
+                anyhow!("I tried creating a new folder to cache an elm.json file in but failed!")
             })?;
         let file = OpenOptions::new()
             .write(true)
@@ -332,10 +327,7 @@ impl Retriever {
         Ok(p_path)
     }
 
-    fn read_cached_deps(
-        &mut self,
-        pkg: &Summary,
-    ) -> Result<Vec<Incompatibility<PackageId>>> {
+    fn read_cached_deps(&mut self, pkg: &Summary) -> Result<Vec<Incompatibility<PackageId>>> {
         debug!(
             self.logger,
             "Attempting to read cached deps for {}@{}", pkg.id, pkg.version

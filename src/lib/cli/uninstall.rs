@@ -6,10 +6,10 @@ use crate::{
     semver,
     solver::Resolver,
 };
+use anyhow::{Context, Result};
 use clap::ArgMatches;
 use colored::Colorize;
 use slog::Logger;
-use anyhow::{Result, Context};
 use std::collections::{BTreeMap, HashSet};
 
 pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {

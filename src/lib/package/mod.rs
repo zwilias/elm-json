@@ -1,5 +1,5 @@
 use crate::semver::{self, Version};
-use anyhow::{bail, anyhow, Error};
+use anyhow::{anyhow, bail, Error};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -114,9 +114,7 @@ impl FromStr for Name {
         let parts: Vec<_> = package.split('/').collect();
         match parts.as_slice() {
             [author, project] => Self::new(author, project),
-            _ => Err(anyhow!(
-                "A valid package name look like \"author/project\""
-            )),
+            _ => Err(anyhow!("A valid package name look like \"author/project\"")),
         }
     }
 }

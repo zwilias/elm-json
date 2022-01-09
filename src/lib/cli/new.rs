@@ -1,8 +1,8 @@
 use super::Kind;
 use crate::project::{Application, Package, Project};
+use anyhow::{anyhow, bail, Context, Error, Result};
 use clap::ArgMatches;
 use colored::Colorize;
-use anyhow::{bail, anyhow, Error, Context, Result};
 use serde::Serialize;
 use slog::Logger;
 use std::{fs::OpenOptions, io::BufWriter};
@@ -104,8 +104,7 @@ fn create_elm_json(info: &Project) -> Result<()> {
     let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
     let mut serializer = serde_json::Serializer::with_formatter(writer, formatter);
 
-    info.serialize(&mut serializer)
-        .context(Kind::Unknown)?;
+    info.serialize(&mut serializer).context(Kind::Unknown)?;
     Ok(())
 }
 

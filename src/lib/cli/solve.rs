@@ -5,8 +5,8 @@ use crate::{
     semver,
     solver::Resolver,
 };
+use anyhow::{Context, Result};
 use clap::ArgMatches;
-use anyhow::{Result, Context};
 use slog::Logger;
 
 pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {

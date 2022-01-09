@@ -4,10 +4,10 @@ use std::alloc::System;
 #[global_allocator]
 static A: System = System;
 
+use anyhow::{Context, Result};
 use cli::Kind;
 use colored::Colorize;
 use elm_json::cli;
-use anyhow::{Context, Result};
 use slog::{o, Drain, Logger};
 
 fn main() {

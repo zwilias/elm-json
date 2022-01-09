@@ -12,7 +12,6 @@ pub mod util;
 
 pub use error::Kind;
 
-
 pub fn build() -> App<'static, 'static> {
     App::new("elm-json")
         .version(env!("CARGO_PKG_VERSION"))
