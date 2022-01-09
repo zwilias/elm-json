@@ -10,9 +10,8 @@ pub mod uninstall;
 pub mod upgrade;
 pub mod util;
 
-pub use error::{Error, Kind as ErrorKind};
+pub use error::Kind;
 
-pub type Result<T> = std::result::Result<T, Error>;
 
 pub fn build() -> App<'static, 'static> {
     App::new("elm-json")

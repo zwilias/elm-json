@@ -1,20 +1,20 @@
-use super::ErrorKind;
+use super::Kind;
 use crate::project::{Application, Package, Project};
 use clap::ArgMatches;
 use colored::Colorize;
-use failure::{bail, format_err, Error, ResultExt};
+use anyhow::{bail, anyhow, Error, Context, Result};
 use serde::Serialize;
 use slog::Logger;
 use std::{fs::OpenOptions, io::BufWriter};
 
-pub fn run(matches: &ArgMatches, _logger: &Logger) -> super::Result<()> {
+pub fn run(matches: &ArgMatches, _logger: &Logger) -> Result<()> {
     let options = vec!["application", "package"];
     let option_idx = dialoguer::Select::new()
         .with_prompt("What type of elm.json file do you want to create?")
         .items(&options)
         .default(0)
         .interact()
-        .context(ErrorKind::Unknown)?;
+        .context(Kind::Unknown)?;
 
     match options[option_idx] {
         "application" => create_application(matches),
@@ -23,7 +23,7 @@ pub fn run(matches: &ArgMatches, _logger: &Logger) -> super::Result<()> {
     }
 }
 
-fn create_package(_matches: &ArgMatches) -> super::Result<()> {
+fn create_package(_matches: &ArgMatches) -> Result<()> {
     let name = until_valid(
         str::parse,
         "Enter a name for your package: (format: author/project)",
@@ -39,7 +39,7 @@ fn create_package(_matches: &ArgMatches) -> super::Result<()> {
         .items(&license_options)
         .default(0)
         .interact()
-        .context(ErrorKind::Unknown)?;
+        .context(Kind::Unknown)?;
 
     let license = match license_options[license_option_idx] {
         "other..." => until_valid(
@@ -47,7 +47,7 @@ fn create_package(_matches: &ArgMatches) -> super::Result<()> {
                 if APPROVED_LICENSES.contains(&&*input) {
                     Ok(input.to_string())
                 } else {
-                    Err(format_err!("Please pick a valid license"))
+                    Err(anyhow!("Please pick a valid license"))
                 }
             },
             "License in SPDX format",
@@ -67,7 +67,7 @@ fn validate_summary(summary: &str) -> Result<String, Error> {
     Ok(summary.to_string())
 }
 
-fn until_valid<X, F>(validate: F, prompt: &str) -> super::Result<X>
+fn until_valid<X, F>(validate: F, prompt: &str) -> Result<X>
 where
     F: Fn(&str) -> Result<X, Error>,
 {
@@ -77,7 +77,7 @@ where
         let res_: String = dialoguer::Input::new()
             .with_prompt(prompt)
             .interact()
-            .context(ErrorKind::Unknown)?;
+            .context(Kind::Unknown)?;
         match validate(&res_) {
             Ok(v) => {
                 res = v;
@@ -89,23 +89,23 @@ where
     Ok(res)
 }
 
-fn create_application(_matches: &ArgMatches) -> super::Result<()> {
+fn create_application(_matches: &ArgMatches) -> Result<()> {
     let proj = Project::Application(Application::new());
     create_elm_json(&proj)
 }
 
-fn create_elm_json(info: &Project) -> super::Result<()> {
+fn create_elm_json(info: &Project) -> Result<()> {
     let file = OpenOptions::new()
         .write(true)
         .create_new(true)
         .open("elm.json")
-        .context(ErrorKind::UnwritableElmJson)?;
+        .context(Kind::UnwritableElmJson)?;
     let writer = BufWriter::new(file);
     let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
     let mut serializer = serde_json::Serializer::with_formatter(writer, formatter);
 
     info.serialize(&mut serializer)
-        .context(ErrorKind::Unknown)?;
+        .context(Kind::Unknown)?;
     Ok(())
 }
 

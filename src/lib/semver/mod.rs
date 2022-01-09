@@ -46,7 +46,7 @@ SOFTWARE.
 // Good ideas: https://pub.dartlang.org/packages/pub_semver
 
 use self::Interval::{Closed, Open, Unbounded};
-use failure::{format_err, Error};
+use anyhow::{anyhow, Error};
 use indexmap::{indexset, IndexSet};
 use itertools::Itertools;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
@@ -96,14 +96,14 @@ impl FromStr for Version {
             .split('.')
             .map(str::parse)
             .collect::<Result<Vec<_>, _>>()
-            .map_err(|e| format_err!("{}", e))?;
+            .map_err(|e| anyhow!("{}", e))?;
         match parts.as_slice() {
             [major, minor, patch] => Ok(Self {
                 major: *major,
                 minor: *minor,
                 patch: *patch,
             }),
-            _ => Err(format_err!("Invalid version: {}", s)),
+            _ => Err(anyhow!("Invalid version: {}", s)),
         }
     }
 }

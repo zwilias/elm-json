@@ -1,4 +1,4 @@
-use super::{util, ErrorKind, Result};
+use super::{util, Kind};
 use crate::{
     package::{
         self,
@@ -10,7 +10,7 @@ use crate::{
 };
 use clap::ArgMatches;
 use colored::Colorize;
-use failure::ResultExt;
+use anyhow::{Context, Result};
 use itertools::Itertools;
 use petgraph::{self, visit::IntoNodeReferences};
 use slog::Logger;
@@ -31,7 +31,7 @@ fn tree_application(
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
+        Retriever::new(logger, &elm_version.into(), offline).context(Kind::Unknown)?;
 
     retriever.add_preferred_versions(
         info.dependencies
@@ -56,25 +56,25 @@ fn tree_application(
     Resolver::new(logger, &mut retriever)
         .solve()
         .map(|v| show_tree(&v, matches.value_of("package")))
-        .context(ErrorKind::NoResolution)?;
+        .context(Kind::NoResolution)?;
     Ok(())
 }
 
 fn tree_package(matches: &ArgMatches, offline: bool, logger: &Logger, info: Package) -> Result<()> {
     let deps = if matches.is_present("test") {
-        info.all_dependencies().context(ErrorKind::InvalidElmJson)?
+        info.all_dependencies().context(Kind::InvalidElmJson)?
     } else {
         info.dependencies()
     };
 
     let mut retriever = Retriever::new(logger, &info.elm_version().to_constraint(), offline)
-        .context(ErrorKind::Unknown)?;
+        .context(Kind::Unknown)?;
     retriever.add_deps(&deps);
 
     Resolver::new(logger, &mut retriever)
         .solve()
         .map(|v| show_tree(&v, matches.value_of("package")))
-        .context(ErrorKind::NoResolution)?;
+        .context(Kind::NoResolution)?;
     Ok(())
 }
 

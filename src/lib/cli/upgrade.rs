@@ -1,4 +1,5 @@
-use super::{util, ErrorKind, Result};
+use super::{util, Kind};
+use anyhow::{Context, Result, bail};
 use crate::{
     diff,
     package::retriever::Retriever,
@@ -8,7 +9,6 @@ use crate::{
 };
 use clap::ArgMatches;
 use colored::Colorize;
-use failure::ResultExt;
 use slog::Logger;
 
 pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
@@ -17,7 +17,7 @@ pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
         offline,
         logger,
         upgrade_application,
-        |_, _, _, _| Err(ErrorKind::NotSupported.into()),
+        |_, _, _, _| bail!(Kind::NotSupported),
     )
 }
 fn upgrade_application(
@@ -34,14 +34,14 @@ fn upgrade_application(
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
+        Retriever::new(logger, &elm_version.into(), offline).context(Kind::Unknown)?;
 
     retriever.add_deps(&info.dependencies(&strictness));
     retriever.add_deps(&info.test_dependencies(&strictness));
 
     let res = Resolver::new(logger, &mut retriever)
         .solve()
-        .context(ErrorKind::NoResolution)?;
+        .context(Kind::NoResolution)?;
 
     let direct_deps: Vec<_> = info.dependencies.direct.keys().cloned().collect();
     let deps = project::reconstruct(&direct_deps, &res);

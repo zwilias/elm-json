@@ -1,59 +1,50 @@
-use failure::{Backtrace, Context, Fail};
-use std::fmt::{self, Display};
+use thiserror::Error;
 
-#[derive(Debug)]
-pub struct Error(Context<Kind>);
-
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Fail)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Error)]
 pub enum Kind {
-    #[fail(display = "Missing elm.json")]
+    #[error("Missing elm.json")]
     MissingElmJson,
-    #[fail(display = "Invalid elm.json")]
+    #[error("Invalid elm.json")]
     InvalidElmJson,
-    #[fail(display = "Failed to write elm.json")]
+    #[error("Failed to write elm.json")]
     UnwritableElmJson,
-    #[fail(display = "No valid package version")]
+    #[error("No valid package version")]
     NoResolution,
-    #[fail(display = "Not supported")]
+    #[error("Not supported")]
     NotSupported,
-    #[fail(display = "Unknown error")]
+    #[error("Unknown error")]
     Unknown,
 }
 
-impl Fail for Error {
-    fn name(&self) -> Option<&str> {
-        self.0.name()
-    }
+// impl Fail for Error {
+//     fn name(&self) -> Option<&str> {
+//         self.0.name()
+//     }
 
-    fn cause(&self) -> Option<&dyn Fail> {
-        self.0.cause()
-    }
+//     fn cause(&self) -> Option<&dyn Fail> {
+//         self.0.cause()
+//     }
 
-    fn backtrace(&self) -> Option<&Backtrace> {
-        self.0.backtrace()
-    }
-}
+//     fn backtrace(&self) -> Option<&Backtrace> {
+//         self.0.backtrace()
+//     }
+// }
 
-impl Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        Display::fmt(&self.0, f)
-    }
-}
 
-impl Error {
-    pub fn kind(&self) -> Kind {
-        *self.0.get_context()
-    }
-}
+// impl Error {
+//     pub fn kind(&self) -> Kind {
+//         *self.0.get_context()
+//     }
+// }
 
-impl From<Kind> for Error {
-    fn from(kind: Kind) -> Self {
-        Self(Context::new(kind))
-    }
-}
+// impl From<Kind> for Error {
+//     fn from(kind: Kind) -> Self {
+//         Self(Context::new(kind))
+//     }
+// }
 
-impl From<Context<Kind>> for Error {
-    fn from(inner: Context<Kind>) -> Self {
-        Self(inner)
-    }
-}
+// impl From<Context<Kind>> for Error {
+//     fn from(inner: Context<Kind>) -> Self {
+//         Self(inner)
+//     }
+// }

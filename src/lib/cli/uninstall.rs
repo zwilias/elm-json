@@ -1,4 +1,4 @@
-use super::{util, ErrorKind, Result};
+use super::{util, Kind};
 use crate::{
     diff,
     package::{self, retriever::Retriever},
@@ -8,8 +8,8 @@ use crate::{
 };
 use clap::ArgMatches;
 use colored::Colorize;
-use failure::ResultExt;
 use slog::Logger;
+use anyhow::{Result, Context};
 use std::collections::{BTreeMap, HashSet};
 
 pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
@@ -32,7 +32,7 @@ fn uninstall_application(
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
+        Retriever::new(logger, &elm_version.into(), offline).context(Kind::Unknown)?;
 
     let extras: HashSet<_> = matches
         .values_of_lossy("extra")
@@ -71,7 +71,7 @@ fn uninstall_application(
 
     let res = Resolver::new(logger, &mut retriever)
         .solve()
-        .context(ErrorKind::NoResolution)?;
+        .context(Kind::NoResolution)?;
 
     let orig_direct = info
         .dependencies

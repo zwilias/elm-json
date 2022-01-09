@@ -4,10 +4,10 @@ use std::alloc::System;
 #[global_allocator]
 static A: System = System;
 
-use cli::ErrorKind;
+use cli::Kind;
 use colored::Colorize;
 use elm_json::cli;
-use failure::{Fail, ResultExt};
+use anyhow::{Context, Result};
 use slog::{o, Drain, Logger};
 
 fn main() {
@@ -16,19 +16,19 @@ fn main() {
             "\n{}\n",
             cli::util::format_header(&e.to_string().to_uppercase()).red()
         );
-        e.cause()
+        e.source()
             .map(|e| eprintln!("{}", textwrap::fill(&e.to_string(), 80)))
             .unwrap_or(());
         std::process::exit(1);
     }
 }
 
-fn run() -> cli::Result<()> {
+fn run() -> Result<()> {
     ctrlc::set_handler(move || {
         let term = console::Term::stdout();
         let _ = term.show_cursor();
     })
-    .context(ErrorKind::Unknown)?;
+    .context(Kind::Unknown)?;
 
     let matches = cli::build().get_matches();
 

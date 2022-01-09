@@ -1,4 +1,4 @@
-use super::{util, ErrorKind, Result};
+use super::{util, Kind};
 use crate::{
     package::{retriever::Retriever, Package},
     project::{AppDependencies, Application},
@@ -6,7 +6,7 @@ use crate::{
     solver::Resolver,
 };
 use clap::ArgMatches;
-use failure::ResultExt;
+use anyhow::{Result, Context};
 use slog::Logger;
 
 pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
@@ -23,7 +23,7 @@ fn solve_application(
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
+        Retriever::new(logger, &elm_version.into(), offline).context(Kind::Unknown)?;
     let extras = util::add_extra_deps(matches, &mut retriever);
 
     retriever.add_preferred_versions(
@@ -54,8 +54,8 @@ fn solve_application(
 
     Resolver::new(logger, &mut retriever)
         .solve()
-        .context(ErrorKind::NoResolution)
-        .and_then(|x| serde_json::to_string(&AppDependencies::from(x)).context(ErrorKind::Unknown))
+        .context(Kind::NoResolution)
+        .and_then(|x| serde_json::to_string(&AppDependencies::from(x)).context(Kind::Unknown))
         .map(|v| println!("{}", v))?;
     Ok(())
 }
@@ -67,13 +67,13 @@ fn solve_package(
     info: Package,
 ) -> Result<()> {
     let deps = if matches.is_present("test") {
-        info.all_dependencies().context(ErrorKind::InvalidElmJson)?
+        info.all_dependencies().context(Kind::InvalidElmJson)?
     } else {
         info.dependencies()
     };
 
     let mut retriever = Retriever::new(logger, &info.elm_version().to_constraint(), offline)
-        .context(ErrorKind::Unknown)?;
+        .context(Kind::Unknown)?;
 
     if matches.is_present("minimize") {
         retriever.minimize();
@@ -85,8 +85,8 @@ fn solve_package(
 
     Resolver::new(logger, &mut retriever)
         .solve()
-        .context(ErrorKind::NoResolution)
-        .and_then(|x| serde_json::to_string(&AppDependencies::from(x)).context(ErrorKind::Unknown))
+        .context(Kind::NoResolution)
+        .and_then(|x| serde_json::to_string(&AppDependencies::from(x)).context(Kind::Unknown))
         .map(|v| println!("{}", v))?;
     Ok(())
 }

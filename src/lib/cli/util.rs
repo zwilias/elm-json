@@ -1,4 +1,4 @@
-use super::{ErrorKind, Result};
+use super::Kind;
 use crate::{
     package::{self, retriever::Retriever},
     project::{Application, Package, Project},
@@ -6,7 +6,7 @@ use crate::{
 };
 use clap::ArgMatches;
 use dialoguer::Confirm;
-use failure::{format_err, ResultExt};
+use anyhow::{anyhow, Context, Result};
 use serde::ser::Serialize;
 use slog::Logger;
 use std::{
@@ -23,7 +23,7 @@ pub fn confirm(prompt: &str, matches: &ArgMatches) -> Result<bool> {
     Confirm::new()
         .with_prompt(prompt)
         .interact()
-        .context(ErrorKind::Unknown)
+        .context(Kind::Unknown)
         .map_err(convert::Into::into)
 }
 
@@ -46,23 +46,23 @@ where
 
 fn read_elm_json(matches: &ArgMatches) -> Result<Project> {
     let path = matches.value_of("INPUT").unwrap();
-    let file = File::open(path).context(ErrorKind::MissingElmJson)?;
-    let info: Project = serde_json::from_reader(file).context(ErrorKind::InvalidElmJson)?;
+    let file = File::open(path).context(Kind::MissingElmJson)?;
+    let info: Project = serde_json::from_reader(file).context(Kind::InvalidElmJson)?;
     Ok(info)
 }
 
 pub fn write_elm_json(project: &Project, matches: &ArgMatches) -> Result<()> {
     let path = matches.value_of("INPUT").unwrap();
-    let file = File::create(path).context(ErrorKind::UnwritableElmJson)?;
+    let file = File::create(path).context(Kind::UnwritableElmJson)?;
     let writer = BufWriter::new(file);
     let formatter = serde_json::ser::PrettyFormatter::with_indent(b"    ");
     let mut serializer = serde_json::Serializer::with_formatter(writer, formatter);
     project
         .serialize(&mut serializer)
-        .context(ErrorKind::Unknown)?;
+        .context(Kind::Unknown)?;
     let mut writer = serializer.into_inner();
-    writer.write(b"\n").context(ErrorKind::UnwritableElmJson)?;
-    writer.flush().context(ErrorKind::UnwritableElmJson)?;
+    writer.write(b"\n").context(Kind::UnwritableElmJson)?;
+    writer.flush().context(Kind::UnwritableElmJson)?;
     Ok(())
 }
 
@@ -98,7 +98,7 @@ fn lax_version_from_string(version: &str) -> std::result::Result<semver::Constra
         .split('.')
         .map(str::parse)
         .collect::<std::result::Result<Vec<_>, _>>()
-        .map_err(|e| format_err!("{}", e).to_string())?;
+        .map_err(|e| anyhow!("{}", e).to_string())?;
     match parts.as_slice() {
         [major] => Ok(semver::Constraint::from(semver::Range::from(
             &semver::Version::new(*major, 0, 0),
@@ -123,10 +123,10 @@ pub fn valid_lax_version(version: String) -> std::result::Result<(), String> {
         .split('.')
         .map(str::parse)
         .collect::<std::result::Result<Vec<_>, _>>()
-        .map_err(|e| format_err!("{}", e).to_string())?;
+        .map_err(|e| anyhow!("{}", e).to_string())?;
     match parts.as_slice() {
         [_] => Ok(()),
-        _ => Err(format_err!("Invalid lax version: {}", version).to_string()),
+        _ => Err(anyhow!("Invalid lax version: {}", version).to_string()),
     }
 }
 

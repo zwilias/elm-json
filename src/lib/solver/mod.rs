@@ -30,7 +30,7 @@ pub use self::{
     summary::Summary,
 };
 use crate::semver::{Constraint, Relation, Version};
-use failure::{bail, Error};
+use anyhow::{bail, Error};
 use indexmap::{indexmap, indexset, IndexMap};
 use petgraph::{
     self,

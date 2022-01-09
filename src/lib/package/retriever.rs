@@ -3,7 +3,7 @@ use crate::{
     semver::{Constraint, Range, Version},
     solver::{incompat::Incompatibility, retriever, summary},
 };
-use failure::{bail, format_err, Error};
+use anyhow::{bail, anyhow, Result};
 use fs2::FileExt;
 use serde::ser::Serialize;
 use slog::{debug, o, warn, Logger};
@@ -71,7 +71,7 @@ impl PackageId {
 }
 
 impl Retriever {
-    pub fn new(logger: &Logger, elm_version: &Constraint, offline: bool) -> Result<Self, Error> {
+    pub fn new(logger: &Logger, elm_version: &Constraint, offline: bool) -> Result<Self> {
         let mut deps_cache = HashMap::new();
 
         deps_cache.insert(
@@ -129,7 +129,7 @@ impl Retriever {
         count
     }
 
-    fn fetch_versions(&mut self) -> Result<(), Error> {
+    fn fetch_versions(&mut self) -> Result<()> {
         let file = Self::cache_file()?;
         file.lock_exclusive()?;
 
@@ -187,13 +187,13 @@ impl Retriever {
     fn fetch_cached_versions(
         &self,
         cache_file: &File,
-    ) -> Result<HashMap<package::Name, Vec<Version>>, Error> {
+    ) -> Result<HashMap<package::Name, Vec<Version>>> {
         let versions: HashMap<package::Name, Vec<Version>> = bincode::deserialize_from(cache_file)?;
 
         Ok(versions)
     }
 
-    fn cache_file() -> Result<File, Error> {
+    fn cache_file() -> Result<File> {
         let mut p_path = Self::packages_path()?;
         p_path.push("elm-json");
         fs::create_dir_all(p_path.clone())?;
@@ -205,7 +205,7 @@ impl Retriever {
             .create(true)
             .open(p_path)
             .map_err(|_| {
-                format_err!("I couldn't open or create the cache file where I cache version info!")
+                anyhow!("I couldn't open or create the cache file where I cache version info!")
             })
     }
 
@@ -213,7 +213,7 @@ impl Retriever {
         &self,
         cache_file: &File,
         versions: &HashMap<package::Name, Vec<Version>>,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let writer = BufWriter::new(cache_file);
         bincode::serialize_into(writer, &versions)?;
         Ok(())
@@ -222,7 +222,7 @@ impl Retriever {
     fn fetch_remote_versions(
         &self,
         from: usize,
-    ) -> Result<HashMap<package::Name, Vec<Version>>, Error> {
+    ) -> Result<HashMap<package::Name, Vec<Version>>> {
         debug!(self.logger, "Fetching versions since {}", from);
 
         let url = format!("https://package.elm-lang.org/all-packages/since/{}", from);
@@ -254,7 +254,7 @@ impl Retriever {
         self.preferred_versions.extend(versions);
     }
 
-    fn fetch_deps(&mut self, pkg: &Summary) -> Result<Vec<Incompatibility<PackageId>>, Error> {
+    fn fetch_deps(&mut self, pkg: &Summary) -> Result<Vec<Incompatibility<PackageId>>> {
         debug!(
             self.logger,
             "Fetching dependencies for {}@{}", pkg.id, pkg.version
@@ -278,7 +278,7 @@ impl Retriever {
             .recursive(true)
             .create(path.parent().unwrap())
             .map_err(|_| {
-                format_err!(
+                anyhow!(
                     "I tried creating a new folder to cache an elm.json file in but failed!"
                 )
             })?;
@@ -288,7 +288,7 @@ impl Retriever {
             .create(true)
             .open(path.clone())
             .map_err(|_| {
-                format_err!(
+                anyhow!(
                     "I tried an elm.json file here {} but couldn't create or open that location!",
                     path.to_string_lossy()
                 )
@@ -304,7 +304,7 @@ impl Retriever {
         elm_version: &str,
         extra: &str,
         pkg: &Summary,
-    ) -> Result<Vec<Incompatibility<PackageId>>, Error> {
+    ) -> Result<Vec<Incompatibility<PackageId>>> {
         debug!(
             self.logger,
             "Attempting to read stored deps for {}@{}", pkg.id, pkg.version
@@ -323,7 +323,7 @@ impl Retriever {
         Ok(self.deps_from_package(pkg, &info))
     }
 
-    fn cached_json_path(pkg: &Summary) -> Result<PathBuf, Error> {
+    fn cached_json_path(pkg: &Summary) -> Result<PathBuf> {
         let mut p_path = Self::packages_path()?;
         p_path.push(format!(
             "elm-json/packages/{}/{}/elm.json",
@@ -335,7 +335,7 @@ impl Retriever {
     fn read_cached_deps(
         &mut self,
         pkg: &Summary,
-    ) -> Result<Vec<Incompatibility<PackageId>>, Error> {
+    ) -> Result<Vec<Incompatibility<PackageId>>> {
         debug!(
             self.logger,
             "Attempting to read cached deps for {}@{}", pkg.id, pkg.version
@@ -377,7 +377,7 @@ impl Retriever {
         deps
     }
 
-    fn packages_path() -> Result<PathBuf, Error> {
+    fn packages_path() -> Result<PathBuf> {
         env::var("ELM_HOME")
             .map(PathBuf::from)
             .or_else(|_| {
@@ -388,7 +388,7 @@ impl Retriever {
                             buf.push("elm");
                             buf
                         })
-                        .ok_or_else(|| format_err!("No config directory found?"))
+                        .ok_or_else(|| anyhow!("No config directory found?"))
                 } else {
                     dirs::home_dir()
                         .map(|h| {
@@ -396,10 +396,10 @@ impl Retriever {
                             buf.push(".elm");
                             buf
                         })
-                        .ok_or_else(|| format_err!("No home directory found?"))
+                        .ok_or_else(|| anyhow!("No home directory found?"))
                 }
             })
-            .map_err(|e| format_err!("{}", e))
+            .map_err(|e| anyhow!("{}", e))
     }
 
     fn root() -> Summary {
@@ -414,7 +414,7 @@ impl retriever::Retriever for Retriever {
         Self::root()
     }
 
-    fn incompats(&mut self, pkg: &Summary) -> Result<Vec<Incompatibility<Self::PackageId>>, Error> {
+    fn incompats(&mut self, pkg: &Summary) -> Result<Vec<Incompatibility<Self::PackageId>>> {
         if pkg.id == PackageId::Elm {
             return Ok(Vec::new());
         }
@@ -436,7 +436,7 @@ impl retriever::Retriever for Retriever {
         }
     }
 
-    fn best(&mut self, pkg: &Self::PackageId, con: &Constraint) -> Result<Version, Error> {
+    fn best(&mut self, pkg: &Self::PackageId, con: &Constraint) -> Result<Version> {
         debug!(
             self.logger,
             "Finding best version for package {} with constraint {}", pkg, con
@@ -461,7 +461,7 @@ impl retriever::Retriever for Retriever {
                     Mode::Maximize => x.cmp(y),
                 })
                 .cloned()
-                .ok_or_else(|| format_err!("Failed to find a version for {}", pkg))
+                .ok_or_else(|| anyhow!("Failed to find a version for {}", pkg))
         } else {
             bail!("Unknown package {}", pkg)
         }

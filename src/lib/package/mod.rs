@@ -1,5 +1,5 @@
 use crate::semver::{self, Version};
-use failure::{bail, format_err, Error};
+use anyhow::{bail, anyhow, Error};
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use std::collections::BTreeMap;
@@ -114,7 +114,7 @@ impl FromStr for Name {
         let parts: Vec<_> = package.split('/').collect();
         match parts.as_slice() {
             [author, project] => Self::new(author, project),
-            _ => Err(format_err!(
+            _ => Err(anyhow!(
                 "A valid package name look like \"author/project\""
             )),
         }
@@ -270,7 +270,7 @@ impl str::FromStr for Range {
                 let upper: Version = (*upper).to_string().parse()?;
                 Ok(Range::new(lower, upper, true))
             }
-            _ => Err(format_err!("Invalid range: {}", s)),
+            _ => Err(anyhow!("Invalid range: {}", s)),
         }
     }
 }

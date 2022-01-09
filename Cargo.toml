@@ -7,7 +7,6 @@ edition = "2021"
 [dependencies]
 indexmap = "1"
 itertools = "0.9"
-failure = "0.1"
 petgraph = "0.5"
 slog = { version = "2", features = ["max_level_trace", "release_max_level_debug"] }
 textwrap = "0.12"
@@ -25,6 +24,8 @@ isahc = { version = "0.9", features = ["static-ssl"] }
 curl = {version = "0.4", features = ["static-curl", "static-ssl", "force-system-lib-on-osx", "http2"]}
 ctrlc = "3.1"
 console = "0.12"
+anyhow = "1.0"
+thiserror = "1.0"
 
 [dev-dependencies]
 assert_cmd = "0.11"

@@ -1,4 +1,4 @@
-use super::{util, ErrorKind, Result};
+use super::{util, Kind};
 use crate::{
     diff,
     package::{
@@ -11,7 +11,7 @@ use crate::{
 };
 use clap::ArgMatches;
 use colored::Colorize;
-use failure::ResultExt;
+use anyhow::{Result, Context};
 use petgraph::{self, visit::IntoNodeReferences};
 use slog::Logger;
 use std::collections::{btree_map::Keys, BTreeMap};
@@ -33,15 +33,15 @@ fn install_package(
     info: Package,
 ) -> Result<()> {
     let mut retriever = Retriever::new(logger, &info.elm_version().to_constraint(), offline)
-        .context(ErrorKind::Unknown)?;
+        .context(Kind::Unknown)?;
 
-    let deps = info.all_dependencies().context(ErrorKind::InvalidElmJson)?;
+    let deps = info.all_dependencies().context(Kind::InvalidElmJson)?;
     retriever.add_deps(&deps);
     let extras = util::add_extra_deps(matches, &mut retriever);
 
     let res = Resolver::new(logger, &mut retriever)
         .solve()
-        .context(ErrorKind::NoResolution)?;
+        .context(Kind::NoResolution)?;
 
     let mut deps: BTreeMap<_, package::Range> = BTreeMap::new();
     let mut test_deps: BTreeMap<_, package::Range> = BTreeMap::new();
@@ -103,7 +103,7 @@ fn install_application(
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(logger, &elm_version.into(), offline).context(ErrorKind::Unknown)?;
+        Retriever::new(logger, &elm_version.into(), offline).context(Kind::Unknown)?;
 
     let extras = util::add_extra_deps(matches, &mut retriever);
 
@@ -137,7 +137,7 @@ fn install_application(
 
     let res = Resolver::new(logger, &mut retriever)
         .solve()
-        .context(ErrorKind::NoResolution)?;
+        .context(Kind::NoResolution)?;
 
     let extra_direct: Vec<_> = if matches.is_present("test") {
         Vec::new()

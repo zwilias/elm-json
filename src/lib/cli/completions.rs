@@ -1,4 +1,4 @@
-use super::Result;
+use anyhow::Result;
 use clap::ArgMatches;
 use std::io;
 
