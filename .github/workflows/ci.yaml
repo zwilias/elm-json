@@ -44,7 +44,7 @@ jobs:
       TARGET: armv7-unknown-linux-musleabihf
     steps:
       - name: Install MUSL target
-        run: sudo apt update && sudo apt install musl-tools
+        run: sudo apt update && sudo apt install musl-tools gcc-arm-linux-gnueabi
       - name: Get the toolchain
         run: curl -o- https://toolchains.bootlin.com/downloads/releases/toolchains/armv7-eabihf/tarballs/${TOOLCHAIN}.tar.bz2 | tar -xjf -;
       - uses: actions/checkout@v2
