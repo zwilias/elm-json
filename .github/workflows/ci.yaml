@@ -46,7 +46,9 @@ jobs:
       - name: Install MUSL target
         run: sudo apt update && sudo apt install musl-tools gcc-arm-linux-gnueabi musl-dev
       - name: Get the toolchain
-        run: curl -o- https://toolchains.bootlin.com/downloads/releases/toolchains/armv7-eabihf/tarballs/${TOOLCHAIN}.tar.bz2 | tar -xjf -;
+        run: |
+          curl -o- https://toolchains.bootlin.com/downloads/releases/toolchains/armv7-eabihf/tarballs/${TOOLCHAIN}.tar.bz2 | tar -xjf -;
+          echo "${GITHUB_WORKSPACE}/${TOOLCHAIN}/bin" >> $GITHUB_PATH
       - uses: actions/checkout@v2
       - run: rustup target add ${TARGET}
       - run: PATH="${PATH}:${GITHUB_WORKSPACE}/${TOOLCHAIN}/bin" cargo build --release --target armv7-unknown-linux-musleabihf --locked
