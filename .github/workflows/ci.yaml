@@ -46,6 +46,9 @@ jobs:
             target: x86_64-apple-darwin
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Install MUSL target
+        if: ${{ matrix.name == 'Linux' }}
+        run: sudo apt update && sudo apt install musl-tools
       - uses: actions/checkout@v2
       - run: rustup target add ${{ matrix.target }}
       - run: cargo build --release --target ${{ matrix.target }} --locked
