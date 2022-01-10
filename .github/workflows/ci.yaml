@@ -29,6 +29,38 @@ jobs:
   #     - run: cargo test --locked
   #     - run: cargo clippy --all-targets --all-features
   #     - run: cargo fmt --all -- --check
+  build_rpi:
+    # needs: test
+    # TODO: uncomment when verified to work
+    # if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    env:
+      CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_LINKER: arm-linux-gcc
+      CC_armv7_unknown_linux_musleabihf: arm-linux-gcc
+      CXX_armv7_unknown_linux_musleabihf: arm-linux-g++
+      LD_armv7_unknown_linux_musleabihf: arm-linux-ld
+      RUSTFLAGS: "-C link-arg=-s"
+      TOOLCHAIN: armv7-eabihf--musl--stable-2018.11-1
+      TARGET: armv7-unknown-linux-musleabihf
+    steps:
+      - name: Install MUSL target
+        run: sudo apt update && sudo apt install musl-tools
+      - name: Get the toolchain
+        run: curl -o- https://toolchains.bootlin.com/downloads/releases/toolchains/armv7-eabihf/tarballs/${TOOLCHAIN}.tar.bz2 | tar -xjf -;
+      - uses: actions/checkout@v2
+      - run: rustup target add ${TARGET}
+      - run: PATH="${PATH}:${GITHUB_WORKSPACE}/${TOOLCHAIN}/bin" cargo build --release --target armv7-unknown-linux-musleabihf --locked
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/heads\//}
+        shell: bash
+      - run: tar czvf elm-json-${{ steps.get_version.outputs.VERSION }}-${TARGET}.tar.gz -C target/${TARGET}/release elm-json
+      - name: Store binary as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: elm-json-${{ steps.get_version.outputs.VERSION }}-${TARGET}.tar.gz
+          path: elm-json-${{ steps.get_version.outputs.VERSION }}-${TARGET}.tar.gz
+
   build:
     # needs: test
     # TODO: uncomment when verified to work
@@ -46,10 +78,6 @@ jobs:
             os: windows-latest
             target: x86_64-pc-windows-msvc
     env:
-      CARGO_TARGET_ARMV7_UNKNOWN_LINUX_MUSLEABIHF_LINKER: arm-linux-gcc
-      CC_armv7_unknown_linux_musleabihf: arm-linux-gcc
-      CXX_armv7_unknown_linux_musleabihf: arm-linux-g++
-      LD_armv7_unknown_linux_musleabihf: arm-linux-ld
       RUSTFLAGS: "-C link-arg=-s"
     runs-on: ${{ matrix.os }}
     steps:
