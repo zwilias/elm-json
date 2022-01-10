@@ -38,25 +38,18 @@ jobs:
         include:
           - name: Linux
             os: ubuntu-latest
-            cross: false
             target: x86_64-unknown-linux-musl
           - name: OSX
             os: macos-latest
-            cross: false
             target: x86_64-apple-darwin
-          - build: RPI
-            os: ubuntu-latest
-            target: armv7-unknown-linux-musleabihf
-            cross: true
-            linker: armv7-linux-musleabihf-gcc
+          - name: Windows
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install MUSL target
-        if: ${{ matrix.name == 'Linux' || matrix.name == 'RPI' }}
+        if: ${{ matrix.name == 'Linux' }}
         run: sudo apt update && sudo apt install musl-tools
-      - name: Install cross linker
-        if: ${{ matrix.cross }}
-        run: sudo apt install ${{ matrix.linker }}
       - uses: actions/checkout@v2
       - run: rustup target add ${{ matrix.target }}
       - run: cargo build --release --target ${{ matrix.target }} --locked
