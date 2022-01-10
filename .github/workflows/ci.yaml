@@ -11,9 +11,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        # os: [windows-latest, ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v2
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.rustup
+            target
+          key: ${{ runner.os }}
       - run: rustup component add clippy
       - run: rustup component add rustfmt-preview
       - run: cargo test --locked
@@ -25,7 +35,7 @@ jobs:
     # if: startsWith(github.ref, 'refs/tags/v')
     strategy:
       matrix:
-        includes:
+        include:
           - name: Linux
             os: ubuntu-latest
             cross: false
