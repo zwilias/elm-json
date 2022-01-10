@@ -61,9 +61,9 @@ jobs:
       - run: cargo build --release --target ${{ matrix.target }} --locked
       - name: Get the version
         id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/heads\//}
         shell: bash
-      - run: tar czvf elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }} -C target/${{ matrix.target }}/release elm-json
+      - run: tar czvf elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release elm-json
       - name: Store binary as artifact
         uses: actions/upload-artifact@v2
         with:
