@@ -7,30 +7,30 @@ on:
     branches: [master]
 
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        # os: [windows-latest, ubuntu-latest, macos-latest]
-        os: [ubuntu-latest]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Cache
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            ~/.rustup
-            target
-          key: ${{ runner.os }}
-      - run: rustup component add clippy
-      - run: rustup component add rustfmt-preview
-      - run: cargo test --locked
-      - run: cargo clippy --all-targets --all-features
-      - run: cargo fmt --all -- --check
+  # test:
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       # os: [windows-latest, ubuntu-latest, macos-latest]
+  #       os: [ubuntu-latest]
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: Cache
+  #       uses: actions/cache@v2
+  #       with:
+  #         path: |
+  #           ~/.cargo/registry
+  #           ~/.cargo/git
+  #           ~/.rustup
+  #           target
+  #         key: ${{ runner.os }}
+  #     - run: rustup component add clippy
+  #     - run: rustup component add rustfmt-preview
+  #     - run: cargo test --locked
+  #     - run: cargo clippy --all-targets --all-features
+  #     - run: cargo fmt --all -- --check
   build:
-    needs: test
+    # needs: test
     # TODO: uncomment when verified to work
     # if: startsWith(github.ref, 'refs/tags/v')
     strategy:
@@ -39,11 +39,11 @@ jobs:
           - name: Linux
             os: ubuntu-latest
             cross: false
-            target: x84_64-unknown-linux-musl
+            target: x86_64-unknown-linux-musl
           - name: OSX
             os: macos-latest
             cross: false
-            target: x84_64-apple-darwin
+            target: x86_64-apple-darwin
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
