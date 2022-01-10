@@ -13,33 +13,21 @@ use anyhow::{Context, Result};
 use clap::ArgMatches;
 use colored::Colorize;
 use petgraph::{self, visit::IntoNodeReferences};
-use slog::Logger;
 use std::collections::{btree_map::Keys, BTreeMap};
 
-pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
-    util::with_elm_json(
-        matches,
-        offline,
-        logger,
-        install_application,
-        install_package,
-    )
+pub fn run(matches: &ArgMatches, offline: bool) -> Result<()> {
+    util::with_elm_json(matches, offline, install_application, install_package)
 }
 
-fn install_package(
-    matches: &ArgMatches,
-    offline: bool,
-    logger: &Logger,
-    info: Package,
-) -> Result<()> {
-    let mut retriever = Retriever::new(logger, &info.elm_version().to_constraint(), offline)
-        .context(Kind::Unknown)?;
+fn install_package(matches: &ArgMatches, offline: bool, info: Package) -> Result<()> {
+    let mut retriever =
+        Retriever::new(&info.elm_version().to_constraint(), offline).context(Kind::Unknown)?;
 
     let deps = info.all_dependencies().context(Kind::InvalidElmJson)?;
     retriever.add_deps(&deps);
     let extras = util::add_extra_deps(matches, &mut retriever);
 
-    let res = Resolver::new(logger, &mut retriever)
+    let res = Resolver::new(&mut retriever)
         .solve()
         .context(Kind::NoResolution)?;
 
@@ -93,17 +81,12 @@ fn install_package(
     Ok(())
 }
 
-fn install_application(
-    matches: &ArgMatches,
-    offline: bool,
-    logger: &Logger,
-    info: Application,
-) -> Result<()> {
+fn install_application(matches: &ArgMatches, offline: bool, info: Application) -> Result<()> {
     let strictness = semver::Strictness::Exact;
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(logger, &elm_version.into(), offline).context(Kind::Unknown)?;
+        Retriever::new(&elm_version.into(), offline).context(Kind::Unknown)?;
 
     let extras = util::add_extra_deps(matches, &mut retriever);
 
@@ -135,7 +118,7 @@ fn install_application(
             .filter(|(k, _)| !extras.contains(k)),
     );
 
-    let res = Resolver::new(logger, &mut retriever)
+    let res = Resolver::new(&mut retriever)
         .solve()
         .context(Kind::NoResolution)?;
 

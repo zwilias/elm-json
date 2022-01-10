@@ -13,25 +13,19 @@ use clap::ArgMatches;
 use colored::Colorize;
 use itertools::Itertools;
 use petgraph::{self, visit::IntoNodeReferences};
-use slog::Logger;
 use std::collections::HashSet;
 use std::iter::FromIterator;
 
-pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
-    util::with_elm_json(matches, offline, logger, tree_application, tree_package)
+pub fn run(matches: &ArgMatches, offline: bool) -> Result<()> {
+    util::with_elm_json(matches, offline, tree_application, tree_package)
 }
 
-fn tree_application(
-    matches: &ArgMatches,
-    offline: bool,
-    logger: &Logger,
-    info: Application,
-) -> Result<()> {
+fn tree_application(matches: &ArgMatches, offline: bool, info: Application) -> Result<()> {
     let mut deps: Vec<_> = info.dependencies(&semver::Strictness::Exact);
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(logger, &elm_version.into(), offline).context(Kind::Unknown)?;
+        Retriever::new(&elm_version.into(), offline).context(Kind::Unknown)?;
 
     retriever.add_preferred_versions(
         info.dependencies
@@ -53,25 +47,25 @@ fn tree_application(
 
     retriever.add_deps(&deps);
 
-    Resolver::new(logger, &mut retriever)
+    Resolver::new(&mut retriever)
         .solve()
         .map(|v| show_tree(&v, matches.value_of("package")))
         .context(Kind::NoResolution)?;
     Ok(())
 }
 
-fn tree_package(matches: &ArgMatches, offline: bool, logger: &Logger, info: Package) -> Result<()> {
+fn tree_package(matches: &ArgMatches, offline: bool, info: Package) -> Result<()> {
     let deps = if matches.is_present("test") {
         info.all_dependencies().context(Kind::InvalidElmJson)?
     } else {
         info.dependencies()
     };
 
-    let mut retriever = Retriever::new(logger, &info.elm_version().to_constraint(), offline)
-        .context(Kind::Unknown)?;
+    let mut retriever =
+        Retriever::new(&info.elm_version().to_constraint(), offline).context(Kind::Unknown)?;
     retriever.add_deps(&deps);
 
-    Resolver::new(logger, &mut retriever)
+    Resolver::new(&mut retriever)
         .solve()
         .map(|v| show_tree(&v, matches.value_of("package")))
         .context(Kind::NoResolution)?;

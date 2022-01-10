@@ -9,23 +9,13 @@ use crate::{
 use anyhow::{bail, Context, Result};
 use clap::ArgMatches;
 use colored::Colorize;
-use slog::Logger;
 
-pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
-    util::with_elm_json(
-        matches,
-        offline,
-        logger,
-        upgrade_application,
-        |_, _, _, _| bail!(Kind::NotSupported),
-    )
+pub fn run(matches: &ArgMatches, offline: bool) -> Result<()> {
+    util::with_elm_json(matches, offline, upgrade_application, |_, _, _| {
+        bail!(Kind::NotSupported)
+    })
 }
-fn upgrade_application(
-    matches: &ArgMatches,
-    offline: bool,
-    logger: &Logger,
-    info: Application,
-) -> Result<()> {
+fn upgrade_application(matches: &ArgMatches, offline: bool, info: Application) -> Result<()> {
     let strictness = if matches.is_present("unsafe") {
         semver::Strictness::Unsafe
     } else {
@@ -34,12 +24,12 @@ fn upgrade_application(
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(logger, &elm_version.into(), offline).context(Kind::Unknown)?;
+        Retriever::new(&elm_version.into(), offline).context(Kind::Unknown)?;
 
     retriever.add_deps(&info.dependencies(&strictness));
     retriever.add_deps(&info.test_dependencies(&strictness));
 
-    let res = Resolver::new(logger, &mut retriever)
+    let res = Resolver::new(&mut retriever)
         .solve()
         .context(Kind::NoResolution)?;
 

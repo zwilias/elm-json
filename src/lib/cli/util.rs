@@ -8,7 +8,6 @@ use anyhow::{anyhow, Context, Result};
 use clap::ArgMatches;
 use dialoguer::Confirm;
 use serde::ser::Serialize;
-use slog::Logger;
 use std::{
     collections::HashSet,
     convert,
@@ -30,17 +29,16 @@ pub fn confirm(prompt: &str, matches: &ArgMatches) -> Result<bool> {
 pub fn with_elm_json<A, P>(
     matches: &ArgMatches,
     offline: bool,
-    logger: &Logger,
     run_app: A,
     run_pkg: P,
 ) -> Result<()>
 where
-    A: FnOnce(&ArgMatches, bool, &Logger, Application) -> Result<()>,
-    P: FnOnce(&ArgMatches, bool, &Logger, Package) -> Result<()>,
+    A: FnOnce(&ArgMatches, bool, Application) -> Result<()>,
+    P: FnOnce(&ArgMatches, bool, Package) -> Result<()>,
 {
     match self::read_elm_json(matches)? {
-        Project::Application(app) => run_app(matches, offline, logger, app),
-        Project::Package(pkg) => run_pkg(matches, offline, logger, pkg),
+        Project::Application(app) => run_app(matches, offline, app),
+        Project::Package(pkg) => run_pkg(matches, offline, pkg),
     }
 }
 

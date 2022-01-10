@@ -4,10 +4,9 @@ use anyhow::{anyhow, bail, Context, Error, Result};
 use clap::ArgMatches;
 use colored::Colorize;
 use serde::Serialize;
-use slog::Logger;
 use std::{fs::OpenOptions, io::BufWriter};
 
-pub fn run(matches: &ArgMatches, _logger: &Logger) -> Result<()> {
+pub fn run(matches: &ArgMatches) -> Result<()> {
     let options = vec!["application", "package"];
     let option_idx = dialoguer::Select::new()
         .with_prompt("What type of elm.json file do you want to create?")

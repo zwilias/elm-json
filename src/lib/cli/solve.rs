@@ -7,23 +7,17 @@ use crate::{
 };
 use anyhow::{Context, Result};
 use clap::ArgMatches;
-use slog::Logger;
 
-pub fn run(matches: &ArgMatches, offline: bool, logger: &Logger) -> Result<()> {
-    util::with_elm_json(matches, offline, logger, solve_application, solve_package)
+pub fn run(matches: &ArgMatches, offline: bool) -> Result<()> {
+    util::with_elm_json(matches, offline, solve_application, solve_package)
 }
 
-fn solve_application(
-    matches: &ArgMatches,
-    offline: bool,
-    logger: &Logger,
-    info: Application,
-) -> Result<()> {
+fn solve_application(matches: &ArgMatches, offline: bool, info: Application) -> Result<()> {
     let deps = &info.dependencies(&semver::Strictness::Exact);
     let elm_version = info.elm_version();
 
     let mut retriever: Retriever =
-        Retriever::new(logger, &elm_version.into(), offline).context(Kind::Unknown)?;
+        Retriever::new(&elm_version.into(), offline).context(Kind::Unknown)?;
     let extras = util::add_extra_deps(matches, &mut retriever);
 
     retriever.add_preferred_versions(
@@ -52,7 +46,7 @@ fn solve_application(
         )
     }
 
-    Resolver::new(logger, &mut retriever)
+    Resolver::new(&mut retriever)
         .solve()
         .context(Kind::NoResolution)
         .and_then(|x| serde_json::to_string(&AppDependencies::from(x)).context(Kind::Unknown))
@@ -60,20 +54,15 @@ fn solve_application(
     Ok(())
 }
 
-fn solve_package(
-    matches: &ArgMatches,
-    offline: bool,
-    logger: &Logger,
-    info: Package,
-) -> Result<()> {
+fn solve_package(matches: &ArgMatches, offline: bool, info: Package) -> Result<()> {
     let deps = if matches.is_present("test") {
         info.all_dependencies().context(Kind::InvalidElmJson)?
     } else {
         info.dependencies()
     };
 
-    let mut retriever = Retriever::new(logger, &info.elm_version().to_constraint(), offline)
-        .context(Kind::Unknown)?;
+    let mut retriever =
+        Retriever::new(&info.elm_version().to_constraint(), offline).context(Kind::Unknown)?;
 
     if matches.is_present("minimize") {
         retriever.minimize();
@@ -83,7 +72,7 @@ fn solve_package(
 
     retriever.add_deps(deps.iter().filter(|(k, _)| !extras.contains(k)));
 
-    Resolver::new(logger, &mut retriever)
+    Resolver::new(&mut retriever)
         .solve()
         .context(Kind::NoResolution)
         .and_then(|x| serde_json::to_string(&AppDependencies::from(x)).context(Kind::Unknown))

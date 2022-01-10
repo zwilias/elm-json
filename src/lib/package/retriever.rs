@@ -6,7 +6,6 @@ use crate::{
 use anyhow::{anyhow, bail, Result};
 use fs2::FileExt;
 use serde::ser::Serialize;
-use slog::{debug, o, warn, Logger};
 use std::{
     collections::HashMap,
     env, fmt,
@@ -14,12 +13,12 @@ use std::{
     io::{BufReader, BufWriter},
     path::PathBuf,
 };
+use tracing::{debug, warn};
 
 pub struct Retriever {
     deps_cache: HashMap<Summary, Vec<Incompatibility<PackageId>>>,
     versions: HashMap<PackageId, Vec<Version>>,
     preferred_versions: HashMap<PackageId, Version>,
-    logger: Logger,
     mode: Mode,
     offline: bool,
 }
@@ -71,7 +70,7 @@ impl PackageId {
 }
 
 impl Retriever {
-    pub fn new(logger: &Logger, elm_version: &Constraint, offline: bool) -> Result<Self> {
+    pub fn new(elm_version: &Constraint, offline: bool) -> Result<Self> {
         let mut deps_cache = HashMap::new();
 
         deps_cache.insert(
@@ -82,13 +81,10 @@ impl Retriever {
             )],
         );
 
-        let logger = logger.new(o!("phase" => "retrieve"));
-
         let mut retriever = Self {
             deps_cache,
             versions: HashMap::new(),
             preferred_versions: HashMap::new(),
-            logger,
             mode: Mode::Maximize,
             offline,
         };
@@ -139,10 +135,7 @@ impl Retriever {
             let count = Self::count_versions(&versions);
 
             let remote_versions = self.fetch_remote_versions(count).unwrap_or_else(|_| {
-                warn!(
-                    self.logger,
-                    "Failed to fetch versions from package.elm-lang.org"
-                );
+                warn!("Failed to fetch versions from package.elm-lang.org");
                 HashMap::new()
             });
 
@@ -220,7 +213,7 @@ impl Retriever {
     }
 
     fn fetch_remote_versions(&self, from: usize) -> Result<HashMap<package::Name, Vec<Version>>> {
-        debug!(self.logger, "Fetching versions since {}", from);
+        debug!("Fetching versions since {}", from);
 
         let url = format!("https://package.elm-lang.org/all-packages/since/{}", from);
         let response = isahc::get(url)?;
@@ -252,13 +245,10 @@ impl Retriever {
     }
 
     fn fetch_deps(&mut self, pkg: &Summary) -> Result<Vec<Incompatibility<PackageId>>> {
-        debug!(
-            self.logger,
-            "Fetching dependencies for {}@{}", pkg.id, pkg.version
-        );
+        debug!("Fetching dependencies for {}@{}", pkg.id, pkg.version);
 
         if self.offline {
-            warn!(self.logger, "Attempting to fetch deps for {:#?}", pkg);
+            warn!("Attempting to fetch deps for {:#?}", pkg);
             bail!("I need to fetch dependencies from package.elm-lang.org but I'm working in offline mode!");
         }
 
@@ -301,8 +291,8 @@ impl Retriever {
         pkg: &Summary,
     ) -> Result<Vec<Incompatibility<PackageId>>> {
         debug!(
-            self.logger,
-            "Attempting to read stored deps for {}@{}", pkg.id, pkg.version
+            "Attempting to read stored deps for {}@{}",
+            pkg.id, pkg.version
         );
 
         let mut p_path = Self::packages_path()?;
@@ -329,8 +319,8 @@ impl Retriever {
 
     fn read_cached_deps(&mut self, pkg: &Summary) -> Result<Vec<Incompatibility<PackageId>>> {
         debug!(
-            self.logger,
-            "Attempting to read cached deps for {}@{}", pkg.id, pkg.version
+            "Attempting to read cached deps for {}@{}",
+            pkg.id, pkg.version
         );
 
         let path = Self::cached_json_path(pkg)?;
@@ -363,7 +353,7 @@ impl Retriever {
             ),
         ));
 
-        debug!(self.logger, "Caching incompatibilities {:#?}", deps);
+        debug!("Caching incompatibilities {:#?}", deps);
 
         self.deps_cache.insert(pkg.clone(), deps.clone());
         deps
@@ -430,8 +420,8 @@ impl retriever::Retriever for Retriever {
 
     fn best(&mut self, pkg: &Self::PackageId, con: &Constraint) -> Result<Version> {
         debug!(
-            self.logger,
-            "Finding best version for package {} with constraint {}", pkg, con
+            "Finding best version for package {} with constraint {}",
+            pkg, con
         );
         if let Some(version) = self.preferred_versions.get(pkg) {
             if con.satisfies(version) {

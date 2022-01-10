@@ -37,8 +37,8 @@ use petgraph::{
     graphmap::{DiGraphMap, NodeTrait},
     Direction,
 };
-use slog::{info, o, trace, Logger};
 use std::{cmp, collections::VecDeque};
+use tracing::{info, trace};
 
 pub type Graph<T> = petgraph::Graph<T, ()>;
 
@@ -52,14 +52,13 @@ pub struct Resolver<'ret, R: Retriever> {
     incompats: Vec<Incompatibility<R::PackageId>>,
     incompat_ixs: IndexMap<R::PackageId, Vec<usize>>,
     retriever: &'ret mut R,
-    logger: Logger,
 }
 
 impl<'ret, R> Resolver<'ret, R>
 where
     R: Retriever,
 {
-    pub fn new(slog: &Logger, retriever: &'ret mut R) -> Self {
+    pub fn new(retriever: &'ret mut R) -> Self {
         let step = 1;
         let level = 0;
         let assignments = vec![];
@@ -67,7 +66,6 @@ where
         let incompat_ixs = indexmap!();
         let decisions = indexmap!();
         let derivations = indexmap!();
-        let logger = slog.new(o!("phase" => "resolve"));
         Resolver {
             step,
             level,
@@ -77,21 +75,20 @@ where
             decisions,
             derivations,
             retriever,
-            logger,
         }
     }
 
     pub fn solve(self) -> Result<Graph<Summary<R::PackageId>>, Error> {
         let mut s = self;
 
-        info!(s.logger, "beginning dependency resolution");
+        info!("beginning dependency resolution");
         let r = s.solve_loop();
 
         if r.is_err() {
-            info!(s.logger, "solve failed");
+            info!("solve failed");
             bail!("{}", &s.pp_error(s.incompats.len() - 1))
         } else {
-            info!(s.logger, "solve successful");
+            info!("solve successful");
             r
         }
     }
@@ -231,7 +228,7 @@ where
     fn resolve_conflict(&mut self, inc: usize) -> Result<usize, Error> {
         let mut inc = inc;
         let mut new_incompatibility = false;
-        trace!(self.logger, "entering conflict resolution");
+        trace!("entering conflict resolution");
         while !self.is_failure(&self.incompats[inc]) {
             let i = self.incompats[inc].clone();
             let mut most_recent_term: Option<(&R::PackageId, &Constraint)> = None;
@@ -342,7 +339,11 @@ where
 
     fn backtrack(&mut self, previous_satisfier_level: u16) {
         let mut packages = indexset!();
-        trace!(self.logger, "backtracking"; "from" => self.level, "to" => previous_satisfier_level);
+        trace!(
+            from_level = self.level,
+            to_level = previous_satisfier_level,
+            "backtracking"
+        );
         self.level = previous_satisfier_level;
 
         loop {
@@ -432,10 +433,7 @@ where
                     }
                 }
                 Err(e) => {
-                    info!(
-                        self.logger,
-                        "Failed to add package {} {}: {}", package.0, package.1, e
-                    );
+                    info!("Failed to add package {} {}: {}", package.0, package.1, e);
                     let pkgs = indexmap!(
                         package.0.clone() => package.1.clone()
                     );
@@ -681,11 +679,11 @@ where
     fn decision(&mut self, pkg: R::PackageId, version: Version) {
         self.level += 1;
         trace!(
-            self.logger, "new decision";
-            "step" => self.step,
-            "level" => self.level,
-            "package" => pkg.to_string(),
-            "version" => version.to_string()
+            step = self.step,
+            level = self.level,
+            package = %pkg,
+            version = %version,
+            "Decision"
         );
         let a = Assignment::new(
             self.step,
@@ -700,11 +698,11 @@ where
 
     fn derivation(&mut self, pkg: R::PackageId, c: Constraint, cause: usize, positive: bool) {
         trace!(
-            self.logger, "new derivation";
-            "step" => self.step,
-            "level" => self.level,
-            "package" => pkg.to_string(),
-            "constraint" => c.to_string()
+            step = self.step,
+            level = self.level,
+            package = %pkg,
+            constraint = %c,
+            "Derivation",
         );
         let a = Assignment::new(
             self.step,
@@ -728,7 +726,7 @@ where
     ) -> usize {
         let new_ix = self.incompats.len();
         let ic = Incompatibility::new(pkgs, cause);
-        trace!(self.logger, "new incompat"; "incompat" => format!("{:?}", ic));
+        trace!(incompat = ?ic, "New incompat");
         self.incompats.push(ic);
         self.incompat_ixs(new_ix);
 
