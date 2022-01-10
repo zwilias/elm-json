@@ -48,6 +48,8 @@ jobs:
       - name: Get the toolchain
         run: |
           curl -o- https://toolchains.bootlin.com/downloads/releases/toolchains/armv7-eabihf/tarballs/${TOOLCHAIN}.tar.bz2 | tar -xjf -;
+      - name: Add toolchain to the PATH
+        run: |
           echo "${GITHUB_WORKSPACE}/${TOOLCHAIN}/bin" >> $GITHUB_PATH
       - uses: actions/checkout@v2
       - run: rustup target add ${TARGET}
