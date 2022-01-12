@@ -308,7 +308,7 @@ checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 
 [[package]]
 name = "elm-json"
-version = "0.2.10"
+version = "0.2.11"
 dependencies = [
  "anyhow",
  "assert_cmd",
