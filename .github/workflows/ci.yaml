@@ -97,7 +97,7 @@ jobs:
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
         shell: bash
-      - run: tar czvf elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release elm-json${{ matrix.ext }}
+      - run: tar czvf elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release/ elm-json${{ matrix.ext }}
       - name: Store binary as artifact
         uses: actions/upload-artifact@v2
         with:
