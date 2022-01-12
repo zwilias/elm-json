@@ -13,7 +13,7 @@ module.exports = binwrap({
     dirname: __dirname,
     binaries: ["elm-json"],
     urls: {
-        "darwin-arm64": root + "-x86_64-apple-darwin.tar.gz",
+        "darwin-arm64": root + "-aarch64-apple-darwin.tar.gz",
         "darwin-x64": root + "-x86_64-apple-darwin.tar.gz",
         "linux-x64": root + "-x86_64-unknown-linux-musl.tar.gz",
         "linux-arm": root + "-armv7-unknown-linux-musleabihf.tar.gz",
