@@ -250,7 +250,6 @@ checksum = "14b8c2d1023ea5fded5b7b892e4b8e95f70038a421126a056761a84246a28971"
 dependencies = [
  "cc",
  "libc",
- "libnghttp2-sys",
  "libz-sys",
  "openssl-sys",
  "pkg-config",
@@ -341,15 +340,6 @@ name = "encode_unicode"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a357d28ed41a50f9c765dbfe56cbc04a64e53e5fc58ba79fbc34c10ef3df831f"
-
-[[package]]
-name = "encoding_rs"
-version = "0.8.30"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7896dc8abb250ffdda33912550faa54c88ec8b998dec0b2c55ab224921ce11df"
-dependencies = [
- "cfg-if",
-]
 
 [[package]]
 name = "event-listener"
@@ -554,12 +544,10 @@ dependencies = [
  "crossbeam-utils",
  "curl",
  "curl-sys",
- "encoding_rs",
  "event-listener",
  "futures-lite",
  "http",
  "log",
- "mime",
  "once_cell",
  "polling",
  "slab",
@@ -605,16 +593,6 @@ name = "libc"
 version = "0.2.112"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b03d17f364a3a042d5e5d46b053bbbf82c92c9430c592dd4c064dc6ee997125"
-
-[[package]]
-name = "libnghttp2-sys"
-version = "0.1.7+1.45.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57ed28aba195b38d5ff02b9170cbff627e336a20925e43b4945390401c5dc93f"
-dependencies = [
- "cc",
- "libc",
-]
 
 [[package]]
 name = "libz-sys"
@@ -666,12 +644,6 @@ checksum = "5aa361d4faea93603064a027415f07bd8e1d5c88c9fbf68bf56a285428fd79ce"
 dependencies = [
  "autocfg",
 ]
-
-[[package]]
-name = "mime"
-version = "0.3.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a60c7ce501c71e03a9c9c0d35b861413ae925bd979cc7a4e30d060069aaac8d"
 
 [[package]]
 name = "nix"
