@@ -56,6 +56,8 @@ jobs:
         run: echo "${PATH}"
       - name: Toolchain found?
         run: which arm-linux-gcc
+      - name: Toolchain executable and stuff?
+        run: arm-linux-gcc --version
       - uses: actions/checkout@v2
       - run: rustup target add ${TARGET}
       - run: RUST_BACKTRACE=1 cargo build --release --target ${TARGET} --locked
