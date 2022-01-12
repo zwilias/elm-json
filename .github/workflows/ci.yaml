@@ -49,8 +49,8 @@ jobs:
       - name: Store binary as artifact
         uses: actions/upload-artifact@v2
         with:
-          name: elm-json-${{ steps.get_version.outputs.VERSION }}-${TARGET}.tar.gz
-          path: elm-json-${{ steps.get_version.outputs.VERSION }}-${TARGET}.tar.gz
+          name: elm-json-${{ steps.get_version.outputs.VERSION }}-${{ env.TARGET }}.tar.gz
+          path: elm-json-${{ steps.get_version.outputs.VERSION }}-${{ env.TARGET }}.tar.gz
 
   build:
     # needs: test
