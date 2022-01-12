@@ -52,6 +52,10 @@ jobs:
       - name: Add toolchain to the PATH
         run: |
           echo "${GITHUB_WORKSPACE}/${TOOLCHAIN}/bin" >> $GITHUB_PATH
+      - name: Show path
+        run: echo "${PATH}"
+      - name: Toolchain found?
+        run: which arm-linux-gcc
       - uses: actions/checkout@v2
       - run: rustup target add ${TARGET}
       - run: cargo build --release --target armv7-unknown-linux-musleabihf --locked
