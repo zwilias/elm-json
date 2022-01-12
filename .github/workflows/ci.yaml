@@ -39,8 +39,12 @@ jobs:
         include:
           - name: Raspberry pi
             target: armv7-unknown-linux-musleabihf
-          - name: FreeBSD
-            target: x86_64-unknown-freebsd
+          # Cross currently doesn't include openssl for this particular
+          # target, so we can't really make this work that easily.
+          # When isahc ships with rusttls support, tho, we can adopt that
+          # and more easily cross compile for platforms like FreeBSD!
+          # - name: FreeBSD
+          #   target: x86_64-unknown-freebsd
     env:
       RUSTFLAGS: "-C link-arg=-s"
     steps:
