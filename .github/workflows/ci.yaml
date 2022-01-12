@@ -58,7 +58,7 @@ jobs:
         run: which arm-linux-gcc
       - uses: actions/checkout@v2
       - run: rustup target add ${TARGET}
-      - run: cargo build --release --target armv7-unknown-linux-musleabihf --locked
+      - run: RUST_BACKTRACE=1 cargo build --release --target ${TARGET} --locked
       - name: Get the version
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/heads\//}
