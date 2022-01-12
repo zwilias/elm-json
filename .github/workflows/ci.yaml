@@ -7,32 +7,31 @@ on:
     branches: [master]
 
 jobs:
-  # test:
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       # os: [windows-latest, ubuntu-latest, macos-latest]
-  #       os: [ubuntu-latest]
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - name: Cache
-  #       uses: actions/cache@v2
-  #       with:
-  #         path: |
-  #           ~/.cargo/registry
-  #           ~/.cargo/git
-  #           ~/.rustup
-  #           target
-  #         key: ${{ runner.os }}
-  #     - run: rustup component add clippy
-  #     - run: rustup component add rustfmt-preview
-  #     - run: cargo test --locked
-  #     - run: cargo clippy --all-targets --all-features
-  #     - run: cargo fmt --all -- --check
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.rustup
+            target
+          key: ${{ runner.os }}
+      - run: rustup component add clippy
+      - run: rustup component add rustfmt-preview
+      - run: cargo test --locked
+      - run: cargo clippy --all-targets --all-features
+      - run: cargo fmt --all -- --check
+
   build_cross:
-    # needs: test
-    # TODO: uncomment when verified to work
-    # if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -53,7 +52,7 @@ jobs:
       - run: cross build --release --target ${{ matrix.target }} --locked
       - name: Get the version
         id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/heads\//}
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
         shell: bash
       - run: tar czvf elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release elm-json
       - name: Store binary as artifact
@@ -63,9 +62,8 @@ jobs:
           path: elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz
 
   build:
-    # needs: test
-    # TODO: uncomment when verified to work
-    # if: startsWith(github.ref, 'refs/tags/v')
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
     strategy:
       matrix:
         include:
@@ -97,7 +95,7 @@ jobs:
       - run: cargo build --release --target ${{ matrix.target }} --locked
       - name: Get the version
         id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/heads\//}
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
         shell: bash
       - run: tar czvf elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release elm-json${{ matrix.ext }}
       - name: Store binary as artifact
@@ -108,20 +106,11 @@ jobs:
 
   create_release:
     needs: [build, build_cross]
-    # if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     name: Create Release
     runs-on: ubuntu-latest
     steps:
-      # - name: Get the version
-      #   id: get_version
-      #   run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/heads\//}
-      #   shell: bash
-      - uses: actions/download-artifact@v2
-      - name: Display structure of downloaded files
-        run: ls -R
-      # - name: Release
-      #   uses: softprops/action-gh-release@v1
-      #   with:
-      #     files: |
-      #       Release.txt
-      #       LICENSE
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: elm-json-*.tar.gz/elm-json-*.tar.gz
