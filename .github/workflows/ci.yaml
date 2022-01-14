@@ -119,4 +119,4 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: elm-json-*.tar.gz/elm-json-*.tar.gz
+          files: elm-json-*.tar.gz
