@@ -57,12 +57,13 @@ jobs:
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
         shell: bash
-      - run: tar czvf elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release elm-json
+      - run: tar czvf elm-json.tar.gz elm-json
+        working-directory: target/${{ matrix.target }}/release
       - name: Store binary as artifact
         uses: actions/upload-artifact@v2
         with:
           name: elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz
-          path: elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz
+          path: target/${{ matrix.target }}/release/elm-json.tar.gz
 
   build:
     needs: test
@@ -100,12 +101,13 @@ jobs:
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
         shell: bash
-      - run: tar czvf elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz -C target/${{ matrix.target }}/release/ elm-json${{ matrix.ext }}
+      - run: tar czvf elm-json.tar.gz elm-json${{ matrix.ext }}
+        working-directory: target/${{ matrix.target }}/release
       - name: Store binary as artifact
         uses: actions/upload-artifact@v2
         with:
           name: elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz
-          path: elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz
+          path: target/${{ matrix.target }}/release/elm-json.tar.gz
 
   create_release:
     needs: [build, build_cross]
@@ -114,17 +116,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v2
-      - name: Get the version
-        id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
-        shell: bash
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
           files: elm-json-*.tar.gz/elm-json-*.tar.gz
-          # files: |
-          #   elm-json-${{ steps.get_version.outputs.VERSION }}-aarch64-apple-darwin.tar.gz/elm-json-${{ steps.get_version.outputs.VERSION }}-aarch64-apple-darwin.tar.gz
-          #   elm-json-${{ steps.get_version.outputs.VERSION }}-armv7-unknown-linux-musleabihf.tar.gz/elm-json-${{ steps.get_version.outputs.VERSION }}-armv7-unknown-linux-musleabihf.tar.gz
-          #   elm-json-${{ steps.get_version.outputs.VERSION }}-x86_64-apple-darwin.tar.gz/elm-json-${{ steps.get_version.outputs.VERSION }}-x86_64-apple-darwin.tar.gz
-          #   elm-json-${{ steps.get_version.outputs.VERSION }}-x86_64-pc-windows-msvc.tar.gz/elm-json-${{ steps.get_version.outputs.VERSION }}-x86_64-pc-windows-msvc.tar.gz
-          #   elm-json-${{ steps.get_version.outputs.VERSION }}-x86_64-unknown-linux-musl.tar.gz/elm-json-${{ steps.get_version.outputs.VERSION }}-x86_64-unknown-linux-musl.tar.gz
