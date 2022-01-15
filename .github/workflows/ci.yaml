@@ -57,13 +57,13 @@ jobs:
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
         shell: bash
-      - run: tar czvf elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz elm-json
+      - run: zip elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.zip elm-json
         working-directory: target/${{ matrix.target }}/release
       - name: Store binary as artifact
         uses: actions/upload-artifact@v2
         with:
           name: elm-json-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz
+          path: target/${{ matrix.target }}/release/elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.zip
 
   build:
     needs: test
@@ -101,13 +101,13 @@ jobs:
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
         shell: bash
-      - run: tar czvf elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz elm-json${{ matrix.ext }}
+      - run: zip elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.zip elm-json${{ matrix.ext }}
         working-directory: target/${{ matrix.target }}/release
       - name: Store binary as artifact
         uses: actions/upload-artifact@v2
         with:
           name: elm-json-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz
+          path: target/${{ matrix.target }}/release/elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.zip
 
   create_release:
     needs: [build, build_cross]
@@ -121,4 +121,4 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: elm-json-*/elm-json-*.tar.gz
+          files: elm-json-*/elm-json-*.zip
