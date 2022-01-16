@@ -57,13 +57,14 @@ jobs:
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
         shell: bash
-      - run: 7z a elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.zip elm-json
-        working-directory: target/${{ matrix.target }}/release
+      - run: |
+          7z a elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar target/${{ matrix.target }}/release/elm-json
+          7z a elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar
       - name: Store binary as artifact
         uses: actions/upload-artifact@v2
         with:
           name: elm-json-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.zip
+          path: elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz
 
   build:
     needs: test
@@ -101,13 +102,14 @@ jobs:
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
         shell: bash
-      - run: 7z a elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.zip elm-json${{ matrix.ext }}
-        working-directory: target/${{ matrix.target }}/release
+      - run: |
+          7z a elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar target/${{ matrix.target }}/release/elm-json${{ matrix.ext }}
+          7z a elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar
       - name: Store binary as artifact
         uses: actions/upload-artifact@v2
         with:
           name: elm-json-${{ matrix.target }}
-          path: target/${{ matrix.target }}/release/elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.zip
+          path: elm-json-${{ steps.get_version.outputs.VERSION }}-${{ matrix.target }}.tar.gz
 
   create_release:
     needs: [build, build_cross]
