@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/zwilias/elm-json.svg?branch=master)](https://travis-ci.org/zwilias/elm-json) [![Build status](https://ci.appveyor.com/api/projects/status/0vub0mf2oenp5lbd/branch/master?svg=true)](https://ci.appveyor.com/project/zwilias/elm-json/branch/master) [![npm version](https://badge.fury.io/js/elm-json.svg)](https://badge.fury.io/js/elm-json)
+[![CI Workflow](https://github.com/zwilias/elm-json/actions/workflows/ci.yaml/badge.svg)](https://github.com/zwilias/elm-json/actions/workflows/ci.yaml) [![npm version](https://badge.fury.io/js/elm-json.svg)](https://badge.fury.io/js/elm-json)
 
 > Deal with your elm.json
 
