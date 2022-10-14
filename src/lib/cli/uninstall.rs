@@ -24,7 +24,7 @@ fn uninstall_application(matches: &ArgMatches, offline: bool, info: Application)
 
     let extras: HashSet<_> = matches
         .values_of_lossy("extra")
-        .unwrap_or_else(Vec::new)
+        .unwrap_or_default()
         .iter()
         .map(|p| p.parse::<package::Name>().expect("Invalid package name"))
         .collect();
@@ -111,7 +111,7 @@ fn uninstall_application(matches: &ArgMatches, offline: bool, info: Application)
 fn uninstall_package(matches: &ArgMatches, _offline: bool, info: Package) -> Result<()> {
     let extras: HashSet<_> = matches
         .values_of_lossy("extra")
-        .unwrap_or_else(Vec::new)
+        .unwrap_or_default()
         .iter()
         .map(|p| p.parse::<package::Name>().expect("Invalid package name"))
         .collect();

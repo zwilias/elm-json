@@ -36,7 +36,7 @@ fn upgrade_application(matches: &ArgMatches, offline: bool, info: Application) -
     let direct_deps: Vec<_> = info.dependencies.direct.keys().cloned().collect();
     let deps = project::reconstruct(&direct_deps, &res);
 
-    if deps.0 == info.dependencies {
+    if deps.0 == info.dependencies && deps.1 == info.test_dependencies {
         println!("\n{}\n", util::format_header("PACKAGES UP TO DATE").green());
         println!("All your dependencies appear to be up to date!");
         return Ok(());

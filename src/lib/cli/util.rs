@@ -65,7 +65,7 @@ pub fn write_elm_json(project: &Project, matches: &ArgMatches) -> Result<()> {
 pub fn add_extra_deps(matches: &ArgMatches, retriever: &mut Retriever) -> HashSet<package::Name> {
     let mut extras = HashSet::new();
 
-    for dep in &matches.values_of_lossy("extra").unwrap_or_else(Vec::new) {
+    for dep in &matches.values_of_lossy("extra").unwrap_or_default() {
         let parts: Vec<&str> = dep.split('@').collect();
         match parts.as_slice() {
             [name] => {
