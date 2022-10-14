@@ -9,6 +9,7 @@
         buildInputs = [
           pkgs.clippy
           pkgs.cargo
+          pkgs.rustfmt
           # cargo build requires these
           pkgs.libiconv
           pkgs.curl
