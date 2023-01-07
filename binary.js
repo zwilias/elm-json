@@ -71,7 +71,7 @@ function exitFailure(message) {
 ${message}
 
 NOTE: You can avoid npm entirely by downloading directly from:
-https://github.com/zwilias/elm-json/releases/tag/${package.version}
+https://github.com/zwilias/elm-json/releases/tag/v${package.version}
 All this package does is distributing a file from there.
 
 --------------------------------------------------------------------------------
