@@ -1,6 +1,6 @@
 var fs = require("fs");
-var package = require("./package.json");
 var path = require("path");
+var package = require("./package.json");
 
 module.exports = function () {
     var os = process.env.BINWRAP_PLATFORM || process.platform;
@@ -47,7 +47,7 @@ module.exports = function () {
         return subBinaryPath;
     }
 
-    var binaryPath = path.resolve(__dirname, package.bin.elm);
+    var binaryPath = path.resolve(__dirname, package.bin["elm-json"]);
     var tmpPath = binaryPath + ".tmp";
 
     try {
