@@ -8,13 +8,13 @@ module.exports = function () {
 
     var requested = `${os}-${arch}`;
     var current = `${process.platform}-${process.arch}`;
+    var subPackageName = `@zwilias/elm-json-${requested}`;
+
     if (requested !== current) {
         console.error(
             `WARNING: Using binaries for the requested platform (${requested}) instead of for the actual platform (${current}).`
         );
     }
-
-    var subPackageName = `@zwilias/elm-json-${requested}`;
 
     if (!(subPackageName in package.optionalDependencies)) {
         exitFailure(
@@ -22,7 +22,7 @@ module.exports = function () {
         );
     }
 
-    var fileName = process.platform === "win32" ? "elm-json.exe" : "elm-json";
+    var fileName = os === "win32" ? "elm-json.exe" : "elm-json";
 
     try {
         var subBinaryPath = require.resolve(`${subPackageName}/${fileName}`);
@@ -43,7 +43,7 @@ module.exports = function () {
     );
 
     // On Windows, npm always invokes `node` so we cannot do any optimizations there either.
-    if (process.platform === "win32" || isYarnBerry) {
+    if (os === "win32" || isYarnBerry) {
         return subBinaryPath;
     }
 
