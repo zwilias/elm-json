@@ -1,9 +1,0 @@
-{
-  "name": "@zwilias/elm-json-linux-arm64",
-  "version": "0.2.13",
-  "description": "The Linux ARM 64-bit binary for elm-json.",
-  "repository": "https://github.com/zwilias/elm-json",
-  "license": "MIT",
-  "os": [ "linux" ],
-  "cpu": [ "arm64" ]
-}

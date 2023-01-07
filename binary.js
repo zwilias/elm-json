@@ -14,6 +14,9 @@ module.exports = function () {
         console.error(
             `WARNING: Using binaries for the requested platform (${requested}) instead of for the actual platform (${current}).`
         );
+    } else if (requested === "linux-arm64") {
+        // This binary is 32-bit but also works on 64-bit ARM.
+        subPackageName = "@zwilias/elm-json-linux-arm";
     }
 
     if (!(subPackageName in package.optionalDependencies)) {
