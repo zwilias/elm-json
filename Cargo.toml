@@ -17,9 +17,8 @@ colored = "2.0"
 dialoguer = "0.6"
 dirs = "3.0"
 fs2 = "0.4"
-isahc = { version = "1.6.0", default-features = false, features = ["static-ssl", "static-curl"] }
-curl = {version = "0.4.42", default-features = false, features = ["ssl", "static-curl", "static-ssl", "force-system-lib-on-osx"]}
 ctrlc = "3.1"
+reqwest = {versions = "0.11.16", features = ["blocking"] }
 console = "0.12"
 anyhow = "1.0"
 thiserror = "1.0"
