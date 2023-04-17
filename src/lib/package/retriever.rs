@@ -216,9 +216,9 @@ impl Retriever {
         debug!("Fetching versions since {}", from);
 
         let url = format!("https://package.elm-lang.org/all-packages/since/{}", from);
-        let response = isahc::get(url)?;
+        let response = Self::http_get(&url);
 
-        let versions: Vec<String> = serde_json::from_reader(response.into_body())?;
+        let versions: Vec<String> = serde_json::from_str(response?.as_str())?;
         let mut res: HashMap<package::Name, Vec<Version>> = HashMap::new();
 
         for entry in &versions {
@@ -256,8 +256,8 @@ impl Retriever {
             "https://package.elm-lang.org/packages/{}/{}/elm.json",
             pkg.id, pkg.version
         );
-        let response = isahc::get(url)?;
-        let info: package::Package = serde_json::from_reader(response.into_body())?;
+        let response = Self::http_get(&url);
+        let info: package::Package = serde_json::from_str(response?.as_str())?;
 
         let path = Self::cached_json_path(pkg)?;
 
@@ -282,6 +282,12 @@ impl Retriever {
         info.serialize(&mut serializer)?;
 
         Ok(self.deps_from_package(pkg, &info))
+    }
+
+    fn http_get(url: &str) -> Result<String> {
+        reqwest::blocking::get(url)?
+            .text()
+            .map_err(|e| anyhow!("Fetch for {} failed: err is {}", url, e))
     }
 
     fn read_stored_deps(
