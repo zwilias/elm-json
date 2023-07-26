@@ -1,5 +1,6 @@
 /target
 **/*.rs.bk
 /node_modules
-/bin
+/packages/*/elm-json
+/packages/*/elm-json.exe
 /unpacked_bin

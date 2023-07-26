@@ -5,22 +5,23 @@
   "author": "Ilias Van Peer",
   "license": "MIT",
   "repository": "zwilias/elm-json",
-  "preferGlobal": true,
   "main": "index.js",
   "scripts": {
-    "install": "binwrap-install",
-    "prepare": "binwrap-prepare",
-    "test": "binwrap-test",
-    "prepublish": "npm test"
+    "install": "node index.js"
   },
   "files": [
+    "binary.js",
     "index.js",
     "bin"
   ],
   "bin": {
     "elm-json": "bin/elm-json"
   },
-  "dependencies": {
-    "binwrap": "^0.2.3"
+  "optionalDependencies": {
+    "@zwilias/elm-json-darwin-arm64": "0.2.13",
+    "@zwilias/elm-json-darwin-x64": "0.2.13",
+    "@zwilias/elm-json-linux-arm": "0.2.13",
+    "@zwilias/elm-json-linux-x64": "0.2.13",
+    "@zwilias/elm-json-win32-x64": "0.2.13"
   }
 }

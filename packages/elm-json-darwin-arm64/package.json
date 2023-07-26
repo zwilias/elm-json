@@ -1,0 +1,9 @@
+{
+  "name": "@zwilias/elm-json-darwin-arm64",
+  "version": "0.2.13",
+  "description": "The macOS ARM 64-bit binary for elm-json.",
+  "repository": "https://github.com/zwilias/elm-json",
+  "license": "MIT",
+  "os": [ "darwin" ],
+  "cpu": [ "arm64" ]
+}
