@@ -20,7 +20,7 @@
   "optionalDependencies": {
     "@zwilias/elm-json-darwin-arm64": "0.2.13",
     "@zwilias/elm-json-darwin-x64": "0.2.13",
-    "@zwilias/elm-json-linux-arm64": "0.2.13",
+    "@zwilias/elm-json-linux-arm": "0.2.13",
     "@zwilias/elm-json-linux-x64": "0.2.13",
     "@zwilias/elm-json-win32-x64": "0.2.13"
   }
