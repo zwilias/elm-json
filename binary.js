@@ -75,7 +75,7 @@ ${message}
 
 NOTE: You can avoid npm entirely by downloading directly from:
 https://github.com/zwilias/elm-json/releases/tag/v${package.version}
-All this package does is distributing a file from there.
+All this package does is distribute a file from there.
 
 --------------------------------------------------------------------------------
     `.trim()
